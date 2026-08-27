@@ -3,7 +3,7 @@ export default function Home() {
   return (
     <div className="font-bold text-primary">
       <main className="text-xl">
-        <div>Tesing 1asdas23asda</div>
+        <div>is this linked?</div>
       </main>
       
     </div>

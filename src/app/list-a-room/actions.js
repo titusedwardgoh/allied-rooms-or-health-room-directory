@@ -38,19 +38,25 @@ async function uniqueSlug(admin, title, suburb) {
       .eq("slug", slug)
       .maybeSingle();
 
-    if (error) throw error;
-    if (!data) return slug;
+    if (error) return { error: error.message };
+    if (!data) return { slug };
     slug = `${base}-${n}`;
     n += 1;
   }
 
-  return `${base}-${Date.now()}`;
+  return { slug: `${base}-${Date.now()}` };
 }
 
 function collectPhotos(formData) {
   return formData
     .getAll("photos")
     .filter((file) => file && typeof file === "object" && file.size > 0);
+}
+
+function photoExtension(file) {
+  const name = typeof file.name === "string" ? file.name : "";
+  const ext = (name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  return ext || "jpg";
 }
 
 function photoContentType(file, ext) {
@@ -63,7 +69,32 @@ function photoContentType(file, ext) {
   return "image/jpeg";
 }
 
+async function uploadPhoto(admin, roomId, file, index) {
+  const ext = photoExtension(file);
+  const path = `${roomId}/${index}.${ext}`;
+  const body =
+    typeof file.arrayBuffer === "function"
+      ? Buffer.from(await file.arrayBuffer())
+      : file;
+
+  const { error } = await admin.storage.from("room-photos").upload(path, body, {
+    cacheControl: "3600",
+    upsert: true,
+    contentType: photoContentType(file, ext),
+  });
+
+  if (error) {
+    console.error("createRoomListing photo:", error.message);
+    return null;
+  }
+
+  const { data } = admin.storage.from("room-photos").getPublicUrl(path);
+  return data?.publicUrl || null;
+}
+
 export async function createRoomListing(prevState, formData) {
+  let publishedSlug = null;
+
   try {
     if (formData.get("company")) {
       return { error: "Unable to publish this listing. Please try again." };
@@ -73,7 +104,7 @@ export async function createRoomListing(prevState, formData) {
     if (!admin) {
       return {
         error:
-          "Server is missing SUPABASE_SERVICE_ROLE_KEY. Add it to .env.local and restart the dev server.",
+          "Server is missing SUPABASE_SERVICE_ROLE_KEY. Add it in Vercel Environment Variables and redeploy.",
       };
     }
 
@@ -125,7 +156,13 @@ export async function createRoomListing(prevState, formData) {
       return { error: "Each photo must be 6MB or smaller." };
     }
 
-    const slug = await uniqueSlug(admin, title, suburb);
+    const slugResult = await uniqueSlug(admin, title, suburb);
+    if (slugResult.error) {
+      console.error("createRoomListing slug:", slugResult.error);
+      return { error: "Could not reach the listings database. Check Supabase env vars on Vercel." };
+    }
+
+    const slug = slugResult.slug;
     const pricePerDayCents = Math.round(dollars * 100);
 
     const { data: profile, error: profileError } = await admin
@@ -171,24 +208,12 @@ export async function createRoomListing(prevState, formData) {
 
     const imageUrls = [];
     for (let i = 0; i < photos.length; i += 1) {
-      const file = photos[i];
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const path = `${room.id}/${i}.${ext || "jpg"}`;
-      const { error: uploadError } = await admin.storage
-        .from("room-photos")
-        .upload(path, file, {
-          cacheControl: "3600",
-          upsert: true,
-          contentType: photoContentType(file, ext),
-        });
-
-      if (uploadError) {
-        console.error("createRoomListing photo:", uploadError.message);
-        continue;
+      try {
+        const url = await uploadPhoto(admin, room.id, photos[i], i);
+        if (url) imageUrls.push(url);
+      } catch (uploadError) {
+        console.error("createRoomListing photo:", uploadError?.message || uploadError);
       }
-
-      const { data: publicUrl } = admin.storage.from("room-photos").getPublicUrl(path);
-      if (publicUrl?.publicUrl) imageUrls.push(publicUrl.publicUrl);
     }
 
     if (imageUrls.length > 0) {
@@ -202,15 +227,14 @@ export async function createRoomListing(prevState, formData) {
       }
     }
 
-    revalidatePath("/");
-    revalidatePath("/rooms");
-    revalidatePath(`/rooms/${room.slug}`);
-    redirect(`/rooms/${room.slug}`);
+    publishedSlug = room.slug;
   } catch (error) {
-    if (error?.digest?.startsWith("NEXT_REDIRECT")) {
-      throw error;
-    }
     console.error("createRoomListing:", error?.message || error);
     return { error: "Something went wrong while publishing. Please try again." };
   }
+
+  revalidatePath("/");
+  revalidatePath("/rooms");
+  revalidatePath(`/rooms/${publishedSlug}`);
+  redirect(`/rooms/${publishedSlug}`);
 }

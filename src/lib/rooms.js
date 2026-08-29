@@ -1,5 +1,10 @@
 import { mockRooms } from "./mockData";
-import { createSupabaseClient, isSupabaseConfigured, roomSelect } from "./supabase";
+import {
+  createSupabaseServerClient,
+  isSupabaseConfigured,
+  roomSelect,
+  roomSelectPlain,
+} from "./supabase";
 
 const HUBS = [
   { suburb: "Richmond", tag: "Inner East" },
@@ -62,37 +67,39 @@ function statsFromRooms(rooms) {
   }));
 }
 
-async function fetchPublishedRooms(filters = {}) {
-  const supabase = createSupabaseClient();
-  if (!supabase) return filterMock(mockRooms, filters);
-
+function applyRoomFilters(query, filters = {}) {
   const { suburb = "", type = "", days = [], max = "" } = filters;
   const cleanSuburb = suburb.trim().toLowerCase();
   const maxCents = max ? parseInt(max, 10) * 100 : null;
   const selectedDays = normalizeDays(days);
 
-  let query = supabase
-    .from("rooms")
-    .select(roomSelect())
-    .eq("is_published", true)
-    .order("created_at", { ascending: false });
+  let next = query.eq("is_published", true).order("created_at", { ascending: false });
+  if (cleanSuburb) next = next.ilike("suburb", `%${cleanSuburb}%`);
+  if (type) next = next.eq("room_type", type);
+  if (selectedDays.length > 0) next = next.overlaps("available_days", selectedDays);
+  if (maxCents) next = next.lte("price_per_day_cents", maxCents);
+  return next;
+}
 
-  if (cleanSuburb) {
-    query = query.ilike("suburb", `%${cleanSuburb}%`);
-  }
-  if (type) {
-    query = query.eq("room_type", type);
-  }
-  if (selectedDays.length > 0) {
-    query = query.overlaps("available_days", selectedDays);
-  }
-  if (maxCents) {
-    query = query.lte("price_per_day_cents", maxCents);
-  }
+async function fetchPublishedRooms(filters = {}) {
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return filterMock(mockRooms, filters);
 
-  const { data, error } = await query;
+  let { data, error } = await applyRoomFilters(
+    supabase.from("rooms").select(roomSelect()),
+    filters,
+  );
+
   if (error) {
     console.error("Supabase getPublishedRooms:", error.message);
+    ({ data, error } = await applyRoomFilters(
+      supabase.from("rooms").select(roomSelectPlain()),
+      filters,
+    ));
+  }
+
+  if (error) {
+    console.error("Supabase getPublishedRooms fallback:", error.message);
     return [];
   }
   return (data ?? []).map(normalizeRoom);
@@ -105,12 +112,12 @@ export async function getPublishedRooms(filters = {}) {
 export async function getRoomBySlug(slug) {
   if (!slug) return null;
 
-  const supabase = createSupabaseClient();
+  const supabase = createSupabaseServerClient();
   if (!supabase) {
     return mockRooms.find((room) => room.slug === slug) || null;
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("rooms")
     .select(roomSelect())
     .eq("slug", slug)
@@ -119,6 +126,16 @@ export async function getRoomBySlug(slug) {
 
   if (error) {
     console.error("Supabase getRoomBySlug:", error.message);
+    ({ data, error } = await supabase
+      .from("rooms")
+      .select(roomSelectPlain())
+      .eq("slug", slug)
+      .eq("is_published", true)
+      .maybeSingle());
+  }
+
+  if (error) {
+    console.error("Supabase getRoomBySlug fallback:", error.message);
     return null;
   }
   return normalizeRoom(data);
@@ -134,7 +151,9 @@ export async function getSuburbStats() {
     return statsFromRooms(mockRooms);
   }
 
-  const supabase = createSupabaseClient();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return statsFromRooms(mockRooms);
+
   const { data, error } = await supabase
     .from("rooms")
     .select("suburb, is_published")

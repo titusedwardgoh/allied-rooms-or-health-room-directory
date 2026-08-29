@@ -1,33 +1,71 @@
 import { createClient } from "@supabase/supabase-js";
 
+function readEnv(name) {
+  return String(process.env[name] || "")
+    .trim()
+    .replace(/^["']|["']$/g, "");
+}
+
+function supabaseUrl() {
+  return readEnv("NEXT_PUBLIC_SUPABASE_URL");
+}
+
+function publishableKey() {
+  return readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+}
+
+function secretKey() {
+  return readEnv("SUPABASE_SERVICE_ROLE_KEY");
+}
+
+function isSupabaseUrl(url) {
+  return url.includes("supabase.co") && !url.includes("YOUR_PROJECT_ID");
+}
+
+function looksLikeKey(key) {
+  return key.length > 10 && !key.includes("YOUR_KEY") && !key.includes("YOUR_SECRET");
+}
+
+function supabaseFetch(key) {
+  return (input, init = {}) => {
+    const headers = new Headers(init.headers);
+    headers.set("apikey", key);
+    if (key.startsWith("sb_")) {
+      headers.delete("Authorization");
+    }
+    headers.set("User-Agent", "alliedrooms-server/1.0");
+    return fetch(input, { ...init, headers, cache: "no-store" });
+  };
+}
+
+function makeClient(url, key) {
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: supabaseFetch(key) },
+  });
+}
+
 export function isSupabaseConfigured() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-  return (
-    url.includes("supabase.co") &&
-    !url.includes("YOUR_PROJECT_ID") &&
-    key.length > 10 &&
-    !key.includes("YOUR_KEY")
-  );
+  return isSupabaseUrl(supabaseUrl()) && looksLikeKey(publishableKey());
 }
 
 export function createSupabaseClient() {
-  if (!isSupabaseConfigured()) return null;
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
+  const url = supabaseUrl();
+  const key = publishableKey();
+  if (!isSupabaseUrl(url) || !looksLikeKey(key)) return null;
+  return makeClient(url, key);
 }
 
 export function createSupabaseAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  if (!url.includes("supabase.co") || !serviceKey || serviceKey.includes("YOUR_SECRET")) {
-    return null;
-  }
-  return createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const url = supabaseUrl();
+  const key = secretKey();
+  if (!isSupabaseUrl(url) || !looksLikeKey(key)) return null;
+  return makeClient(url, key);
+}
+
+/** Server reads: secret key if present (bypasses RLS), otherwise publishable. */
+export function createSupabaseServerClient() {
+  return createSupabaseAdminClient() || createSupabaseClient();
 }
 
 const ROOM_SELECT = `
@@ -55,6 +93,27 @@ const ROOM_SELECT = `
   )
 `;
 
+const ROOM_SELECT_PLAIN = `
+  id,
+  host_id,
+  title,
+  slug,
+  suburb,
+  state,
+  price_per_day_cents,
+  room_type,
+  available_days,
+  amenities,
+  image_urls,
+  description,
+  is_published,
+  created_at
+`;
+
 export function roomSelect() {
   return ROOM_SELECT;
+}
+
+export function roomSelectPlain() {
+  return ROOM_SELECT_PLAIN;
 }

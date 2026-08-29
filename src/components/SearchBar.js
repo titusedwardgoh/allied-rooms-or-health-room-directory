@@ -2,112 +2,112 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Search } from "lucide-react";
-import { DAY_KEYS, DAY_LABEL, ROOM_TYPE_LABEL } from "@/lib/format";
+import { DAY_LABEL, ROOM_TYPE_LABEL } from "@/lib/format";
 
 export default function SearchBar({
-  suburb: initialSuburb = "",
-  roomType: initialType = "",
-  days: initialDays = [],
+  suburb = "",
+  roomType = "",
+  days = [],
+  maxPrice = "",
 }) {
   const router = useRouter();
-  const [suburb, setSuburb] = useState(initialSuburb);
-  const [roomType, setRoomType] = useState(initialType);
-  const [days, setDays] = useState(initialDays);
+  const [inputSuburb, setInputSuburb] = useState(suburb);
+  const [selectedType, setSelectedType] = useState(roomType);
+  const [selectedDays, setSelectedDays] = useState(days);
+  const [max, setMax] = useState(maxPrice);
 
-  function toggleDay(day) {
-    setDays((current) =>
-      current.includes(day)
-        ? current.filter((item) => item !== day)
-        : [...current, day],
-    );
+  function toggleDay(dayKey) {
+    if (selectedDays.includes(dayKey)) {
+      setSelectedDays(selectedDays.filter((d) => d !== dayKey));
+    } else {
+      setSelectedDays([...selectedDays, dayKey]);
+    }
   }
 
-  function handleSubmit(event) {
-    event.preventDefault();
+  function handleSearch(e) {
+    e.preventDefault();
     const params = new URLSearchParams();
-    const trimmed = suburb.trim();
-    if (trimmed) params.set("suburb", trimmed.toLowerCase());
-    if (roomType) params.set("type", roomType);
-    days.forEach((day) => params.append("day", day));
-    const query = params.toString();
-    router.push(query ? `/rooms?${query}` : "/rooms");
+
+    if (inputSuburb.trim()) params.set("suburb", inputSuburb.trim());
+    if (selectedType) params.set("type", selectedType);
+    if (max) params.set("max", max);
+    selectedDays.forEach((d) => params.append("day", d));
+
+    router.push(`/rooms?${params.toString()}`);
   }
 
   return (
     <form
-      onSubmit={handleSubmit}
-      className="sticky top-20 z-40 mx-auto w-full max-w-4xl rounded-2xl border border-stone-200 bg-white/75 p-3 shadow-warm backdrop-blur-md md:rounded-full md:px-3 md:py-2"
+      onSubmit={handleSearch}
+      className="mx-auto max-w-4xl rounded-3xl border border-stone-200 bg-white p-3 shadow-md shadow-stone-900/5 sm:rounded-full sm:p-2.5"
     >
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-0">
-        <label className="flex min-w-0 flex-1 flex-col px-3 md:border-r md:border-stone-200">
-          <span className="text-[11px] font-medium uppercase tracking-widest text-stone-500">
-            Where
-          </span>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2">
+        <div className="flex-1 px-4 py-1">
+          <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">
+            Location
+          </label>
           <input
             type="text"
-            name="suburb"
-            value={suburb}
-            onChange={(event) => setSuburb(event.target.value)}
-            placeholder="Suburb or postcode"
-            className="w-full bg-transparent py-1 text-sm text-stone-900 outline-none placeholder:text-stone-400"
+            placeholder="Richmond, Fitzroy..."
+            value={inputSuburb}
+            onChange={(e) => setInputSuburb(e.target.value)}
+            className="w-full bg-transparent text-sm font-semibold text-stone-900 placeholder-stone-400 focus:outline-none"
           />
-        </label>
+        </div>
 
-        <label className="flex min-w-0 flex-1 flex-col px-3 md:border-r md:border-stone-200">
-          <span className="text-[11px] font-medium uppercase tracking-widest text-stone-500">
+        <div className="hidden h-8 w-px bg-stone-200 sm:block" />
+
+        <div className="flex-1 px-4 py-1">
+          <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">
             Modality
-          </span>
+          </label>
           <select
-            name="type"
-            value={roomType}
-            onChange={(event) => setRoomType(event.target.value)}
-            className="w-full bg-transparent py-1 text-sm text-stone-900 outline-none"
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
+            className="w-full cursor-pointer bg-transparent text-sm font-semibold text-stone-900 focus:outline-none"
           >
-            <option value="">Any</option>
-            {Object.entries(ROOM_TYPE_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>
+            <option value="">Any room type</option>
+            {Object.entries(ROOM_TYPE_LABEL).map(([key, label]) => (
+              <option key={key} value={key}>
                 {label}
               </option>
             ))}
           </select>
-        </label>
+        </div>
 
-        <div className="flex min-w-0 flex-[1.4] flex-col px-3">
-          <span className="text-[11px] font-medium uppercase tracking-widest text-stone-500">
-            Days
-          </span>
-          <div className="flex flex-wrap gap-1 py-1">
-            {DAY_KEYS.map((day) => {
-              const selected = days.includes(day);
+        <div className="hidden h-8 w-px bg-stone-200 sm:block" />
+
+        <div className="px-4 py-1">
+          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-stone-400">
+            Available Days
+          </label>
+          <div className="flex flex-wrap items-center gap-1">
+            {Object.entries(DAY_LABEL).map(([key, label]) => {
+              const active = selectedDays.includes(key);
               return (
                 <button
-                  key={day}
+                  key={key}
                   type="button"
-                  onClick={() => toggleDay(day)}
-                  aria-pressed={selected}
-                  className={`rounded-full border px-2 py-0.5 text-xs transition-colors duration-150 ${
-                    selected
-                      ? "border-clay bg-clay text-white"
-                      : "border-stone-200 bg-paper text-stone-700 hover:border-stone-300"
+                  onClick={() => toggleDay(key)}
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-all ${
+                    active
+                      ? "bg-stone-900 text-white shadow-sm"
+                      : "bg-stone-100 text-stone-600 hover:bg-stone-200"
                   }`}
                 >
-                  {DAY_LABEL[day]}
+                  {label}
                 </button>
               );
             })}
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center justify-end px-1 md:pl-2">
-          <button
-            type="submit"
-            className="inline-flex items-center gap-2 rounded-full bg-clay px-5 py-2.5 text-sm font-medium text-white transition-transform duration-150 hover:bg-orange-900 active:scale-[0.99]"
-          >
-            <Search className="size-4" aria-hidden="true" />
-            Search
-          </button>
-        </div>
+        <button
+          type="submit"
+          className="ml-1 flex h-11 items-center justify-center rounded-2xl bg-teal-900 px-6 font-semibold text-white transition-all hover:bg-teal-950 active:scale-[0.98] sm:rounded-full"
+        >
+          <span className="text-sm">Search</span>
+        </button>
       </div>
     </form>
   );

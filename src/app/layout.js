@@ -1,18 +1,12 @@
 import Link from "next/link";
-import { Cormorant, Unbounded } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import SiteHeader from "@/components/SiteHeader";
 import "./globals.css";
 
-const cormorant = Cormorant({
+const plusJakarta = Plus_Jakarta_Sans({
   display: "swap",
   subsets: ["latin"],
-  variable: "--font-cormorant-face",
-});
-
-const unbounded = Unbounded({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-unbounded",
+  variable: "--font-jakarta",
 });
 
 export const metadata = {
@@ -26,24 +20,24 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en-AU" className={`${unbounded.variable} ${cormorant.variable}`}>
+    <html lang="en-AU" className={plusJakarta.variable}>
       <body className="min-h-screen bg-paper font-sans text-stone-900 antialiased">
         <SiteHeader />
         {children}
         <footer className="border-t border-stone-200 bg-white">
           <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-6">
             <div>
-              <p className="font-display text-lg text-stone-900">AlliedRooms</p>
-              <p className="mt-1 font-cormorant text-lg text-stone-600">
+              <p className="text-lg font-bold text-stone-900">AlliedRooms</p>
+              <p className="mt-1 text-stone-600">
                 Sessional rooms for allied health, listed with the day rate up front.
               </p>
             </div>
             <nav className="flex flex-wrap gap-4 text-sm text-stone-600">
               <Link href="/rooms" className="hover:text-stone-900">
-                Rooms
+                Find a Room
               </Link>
               <Link href="/list-a-room" className="hover:text-stone-900">
-                List a room
+                List a Room
               </Link>
               <span>Melbourne · VIC</span>
             </nav>

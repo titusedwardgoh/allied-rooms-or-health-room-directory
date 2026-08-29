@@ -1,63 +1,152 @@
-import { MELBOURNE_HUBS } from "./format";
 import { mockRooms } from "./mockData";
+import { createSupabaseClient, isSupabaseConfigured, roomSelect } from "./supabase";
 
-function publishedRooms() {
-  return mockRooms.filter((room) => room.is_published);
+const HUBS = [
+  { suburb: "Richmond", tag: "Inner East" },
+  { suburb: "South Yarra", tag: "Metro" },
+  { suburb: "Fitzroy", tag: "Inner North" },
+  { suburb: "Hawthorn", tag: "East" },
+  { suburb: "Brunswick", tag: "North" },
+];
+
+function normalizeDays(days) {
+  if (!days) return [];
+  return Array.isArray(days) ? days.filter(Boolean) : [days];
 }
 
-/**
- * @param {{ suburb?: string, type?: string, days?: string[], max?: number|string }} [filters]
- */
-export function getPublishedRooms(filters = {}) {
-  const suburb = filters.suburb?.trim().toLowerCase();
-  const type = filters.type?.trim();
-  const days = Array.isArray(filters.days)
-    ? filters.days.filter(Boolean)
-    : filters.days
-      ? [filters.days]
-      : [];
-  const maxDollars =
-    filters.max === undefined || filters.max === "" || filters.max === null
-      ? null
-      : Number(filters.max);
+function filterMock(rooms, filters = {}) {
+  const { suburb = "", type = "", days = [], max = "" } = filters;
+  const cleanSuburb = suburb.trim().toLowerCase();
+  const maxCents = max ? parseInt(max, 10) * 100 : null;
+  const selectedDays = normalizeDays(days);
 
-  return publishedRooms().filter((room) => {
-    if (suburb && !room.suburb.toLowerCase().includes(suburb)) {
+  return rooms.filter((room) => {
+    if (!room.is_published) return false;
+    if (cleanSuburb && !room.suburb.toLowerCase().includes(cleanSuburb)) {
       return false;
     }
-    if (type && room.room_type !== type) {
+    if (type && room.room_type !== type) return false;
+    if (
+      selectedDays.length > 0 &&
+      !selectedDays.some((d) => room.available_days.includes(d))
+    ) {
       return false;
     }
-    if (days.length && !days.every((day) => room.available_days.includes(day))) {
-      return false;
-    }
-    if (maxDollars != null && !Number.isNaN(maxDollars)) {
-      if (room.price_per_day_cents > maxDollars * 100) {
-        return false;
-      }
-    }
+    if (maxCents && room.price_per_day_cents > maxCents) return false;
     return true;
   });
 }
 
-export function getRoomBySlug(slug) {
-  return (
-    publishedRooms().find((room) => room.slug === slug) ??
-    mockRooms.find((room) => room.slug === slug) ??
-    null
-  );
+function normalizeRoom(row) {
+  if (!row) return null;
+  const host = Array.isArray(row.host) ? row.host[0] : row.host;
+  return {
+    ...row,
+    host: host ?? null,
+    amenities: row.amenities ?? [],
+    available_days: row.available_days ?? [],
+    image_urls: row.image_urls ?? [],
+  };
 }
 
-export function getSuburbStats() {
-  const rooms = publishedRooms();
-  return MELBOURNE_HUBS.map((suburb) => ({
+function statsFromRooms(rooms) {
+  const counts = {};
+  rooms.forEach((r) => {
+    if (!r.is_published) return;
+    counts[r.suburb] = (counts[r.suburb] || 0) + 1;
+  });
+  return HUBS.map(({ suburb, tag }) => ({
     suburb,
-    count: rooms.filter((room) => room.suburb === suburb).length,
+    tag,
+    count: counts[suburb] || 0,
   }));
 }
 
-export function getFeaturedRooms(limit = 6) {
-  return [...publishedRooms()]
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, limit);
+async function fetchPublishedRooms(filters = {}) {
+  const supabase = createSupabaseClient();
+  if (!supabase) return filterMock(mockRooms, filters);
+
+  const { suburb = "", type = "", days = [], max = "" } = filters;
+  const cleanSuburb = suburb.trim().toLowerCase();
+  const maxCents = max ? parseInt(max, 10) * 100 : null;
+  const selectedDays = normalizeDays(days);
+
+  let query = supabase
+    .from("rooms")
+    .select(roomSelect())
+    .eq("is_published", true)
+    .order("created_at", { ascending: false });
+
+  if (cleanSuburb) {
+    query = query.ilike("suburb", `%${cleanSuburb}%`);
+  }
+  if (type) {
+    query = query.eq("room_type", type);
+  }
+  if (selectedDays.length > 0) {
+    query = query.overlaps("available_days", selectedDays);
+  }
+  if (maxCents) {
+    query = query.lte("price_per_day_cents", maxCents);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("Supabase getPublishedRooms:", error.message);
+    return [];
+  }
+  return (data ?? []).map(normalizeRoom);
+}
+
+export async function getPublishedRooms(filters = {}) {
+  return fetchPublishedRooms(filters);
+}
+
+export async function getRoomBySlug(slug) {
+  if (!slug) return null;
+
+  const supabase = createSupabaseClient();
+  if (!supabase) {
+    return mockRooms.find((room) => room.slug === slug) || null;
+  }
+
+  const { data, error } = await supabase
+    .from("rooms")
+    .select(roomSelect())
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Supabase getRoomBySlug:", error.message);
+    return null;
+  }
+  return normalizeRoom(data);
+}
+
+export async function getFeaturedRooms(limit = 6) {
+  const rooms = await fetchPublishedRooms();
+  return rooms.slice(0, limit);
+}
+
+export async function getSuburbStats() {
+  if (!isSupabaseConfigured()) {
+    return statsFromRooms(mockRooms);
+  }
+
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("rooms")
+    .select("suburb, is_published")
+    .eq("is_published", true);
+
+  if (error) {
+    console.error("Supabase getSuburbStats:", error.message);
+    return statsFromRooms([]);
+  }
+  return statsFromRooms(data ?? []);
+}
+
+export function usingSupabase() {
+  return isSupabaseConfigured();
 }

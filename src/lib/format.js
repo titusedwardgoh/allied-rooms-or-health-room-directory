@@ -1,7 +1,7 @@
 export const ROOM_TYPE_LABEL = {
-  talk_therapy: "Talk therapy",
-  bodywork: "Bodywork",
-  medical: "Medical",
+  talk_therapy: "Talk Therapy",
+  bodywork: "Physical / Bodywork",
+  medical: "Medical Consulting",
 };
 
 export const DAY_LABEL = {
@@ -14,16 +14,6 @@ export const DAY_LABEL = {
   sun: "Sun",
 };
 
-export const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-
-export const MELBOURNE_HUBS = [
-  "Richmond",
-  "Fitzroy",
-  "South Yarra",
-  "Hawthorn",
-  "Brunswick",
-];
-
 export function formatAUDFromCents(cents) {
   return new Intl.NumberFormat("en-AU", {
     style: "currency",
@@ -34,4 +24,27 @@ export function formatAUDFromCents(cents) {
 
 export function pricePerDayLabel(cents) {
   return `${formatAUDFromCents(cents)} / day`;
+}
+
+export const AU_STATES = ["VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT"];
+
+export const AMENITY_LABEL = {
+  soundproofing: "Soundproofing",
+  hicaps: "HICAPS",
+  plinth: "Plinth / treatment table",
+  parking: "Parking",
+  waiting_room: "Waiting room",
+  wheelchair: "Wheelchair access",
+  wifi: "Wifi",
+  kitchen: "Kitchen / tea point",
+};
+
+export function slugify(text) {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]+/g, "")
+    .replace(/-+/g, "-");
 }

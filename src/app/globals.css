@@ -4,14 +4,12 @@
 }
 
 @theme {
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-unbounded), ui-sans-serif, system-ui, sans-serif;
-  --font-cormorant: var(--font-cormorant-face), ui-serif, Georgia, serif;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --color-paper: #fafaf9;
   --color-ink: #1c1917;
   --color-mute: #78716c;
   --color-line: #e7e5e4;
-  --color-clay: #9a3412;
   --color-sage: #115e59;
   --shadow-warm: 0 12px 40px -12px rgb(28 25 23 / 0.12);
 }
@@ -23,5 +21,5 @@ body {
 }
 
 ::selection {
-  background-color: color-mix(in srgb, var(--color-clay) 18%, white);
+  background-color: color-mix(in srgb, var(--color-sage) 18%, white);
 }

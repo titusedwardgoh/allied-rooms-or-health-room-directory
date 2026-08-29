@@ -184,6 +184,7 @@ export default function ListARoomPage() {
 
         <form
           action={formAction}
+          noValidate
           onKeyDown={(e) => {
             if (e.key === "Enter" && step < 3 && e.target.tagName === "INPUT") {
               e.preventDefault();
@@ -371,30 +372,41 @@ export default function ListARoomPage() {
           </section>
 
           <section className={step === 3 ? "space-y-5" : "hidden"}>
-            <label
+            <div
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
                 addFiles(e.dataTransfer.files);
               }}
-              className="block cursor-pointer rounded-2xl border border-dashed border-stone-300 bg-white px-4 py-10 text-center"
+              onClick={() => fileInputRef.current?.click()}
+              className="block cursor-pointer rounded-2xl border border-dashed border-stone-300 bg-white px-4 py-10 text-center transition-colors hover:border-teal-800"
             >
               <p className="text-sm font-semibold text-stone-800">
-                Drag photos here, or click to upload
+                Drag photos here, or click to select files
               </p>
               <p className="mt-1 text-xs text-stone-500">
                 Up to 6 images, 6MB each. Optional — SVG placeholders are used if you skip this.
               </p>
+              <button
+                type="button"
+                className="mt-4 rounded-lg border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+              >
+                Browse files
+              </button>
               <input
                 ref={fileInputRef}
                 type="file"
                 name="photos"
                 accept="image/*"
                 multiple
-                className="mt-4 text-sm"
+                className="hidden"
                 onChange={(e) => addFiles(e.target.files)}
               />
-            </label>
+            </div>
 
             {previews.length > 0 && (
               <div className="grid grid-cols-3 gap-3">
@@ -407,10 +419,11 @@ export default function ListARoomPage() {
                     <img src={photo.url} alt="" className="aspect-square w-full object-cover" />
                     <button
                       type="button"
-                      onClick={() =>
-                        setPhotos((current) => current.filter((_, i) => i !== index))
-                      }
-                      className="absolute right-1.5 top-1.5 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-stone-700"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPhotos((current) => current.filter((_, i) => i !== index));
+                      }}
+                      className="absolute right-1.5 top-1.5 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-stone-700 hover:bg-white"
                     >
                       Remove
                     </button>
@@ -459,6 +472,7 @@ export default function ListARoomPage() {
 
             {step < 3 ? (
               <button
+                key="continue"
                 type="button"
                 onClick={goNext}
                 className="rounded-full bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-950"
@@ -467,8 +481,12 @@ export default function ListARoomPage() {
               </button>
             ) : (
               <button
-                type="submit"
+                key="publish"
+                type="button"
                 disabled={pending}
+                onClick={(event) => {
+                  event.currentTarget.form?.requestSubmit();
+                }}
                 className="rounded-full bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-950 disabled:opacity-60"
               >
                 {pending ? "Publishing…" : "Publish listing"}

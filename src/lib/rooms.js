@@ -1,10 +1,26 @@
 import { mockRooms } from "./mockData";
 import {
-  createSupabaseServerClient,
+  createSupabaseAdminClient,
+  createSupabaseClient,
   isSupabaseConfigured,
   roomSelect,
   roomSelectPlain,
 } from "./supabase";
+
+function supabaseReaders() {
+  return [createSupabaseAdminClient(), createSupabaseClient()].filter(Boolean);
+}
+
+async function queryRooms(run) {
+  let lastError = null;
+  for (const client of supabaseReaders()) {
+    const result = await run(client);
+    if (!result.error) return result;
+    lastError = result.error;
+    console.error("Supabase read:", result.error.message);
+  }
+  return { data: null, error: lastError };
+}
 
 const HUBS = [
   { suburb: "Richmond", tag: "Inner East" },
@@ -82,24 +98,20 @@ function applyRoomFilters(query, filters = {}) {
 }
 
 async function fetchPublishedRooms(filters = {}) {
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return filterMock(mockRooms, filters);
+  if (!supabaseReaders().length) return filterMock(mockRooms, filters);
 
-  let { data, error } = await applyRoomFilters(
-    supabase.from("rooms").select(roomSelect()),
-    filters,
+  let { data, error } = await queryRooms((supabase) =>
+    applyRoomFilters(supabase.from("rooms").select(roomSelect()), filters),
   );
 
   if (error) {
-    console.error("Supabase getPublishedRooms:", error.message);
-    ({ data, error } = await applyRoomFilters(
-      supabase.from("rooms").select(roomSelectPlain()),
-      filters,
+    ({ data, error } = await queryRooms((supabase) =>
+      applyRoomFilters(supabase.from("rooms").select(roomSelectPlain()), filters),
     ));
   }
 
   if (error) {
-    console.error("Supabase getPublishedRooms fallback:", error.message);
+    console.error("Supabase getPublishedRooms:", error.message);
     return [];
   }
   return (data ?? []).map(normalizeRoom);
@@ -112,30 +124,32 @@ export async function getPublishedRooms(filters = {}) {
 export async function getRoomBySlug(slug) {
   if (!slug) return null;
 
-  const supabase = createSupabaseServerClient();
-  if (!supabase) {
+  if (!supabaseReaders().length) {
     return mockRooms.find((room) => room.slug === slug) || null;
   }
 
-  let { data, error } = await supabase
-    .from("rooms")
-    .select(roomSelect())
-    .eq("slug", slug)
-    .eq("is_published", true)
-    .maybeSingle();
-
-  if (error) {
-    console.error("Supabase getRoomBySlug:", error.message);
-    ({ data, error } = await supabase
+  let { data, error } = await queryRooms((supabase) =>
+    supabase
       .from("rooms")
-      .select(roomSelectPlain())
+      .select(roomSelect())
       .eq("slug", slug)
       .eq("is_published", true)
-      .maybeSingle());
+      .maybeSingle(),
+  );
+
+  if (error) {
+    ({ data, error } = await queryRooms((supabase) =>
+      supabase
+        .from("rooms")
+        .select(roomSelectPlain())
+        .eq("slug", slug)
+        .eq("is_published", true)
+        .maybeSingle(),
+    ));
   }
 
   if (error) {
-    console.error("Supabase getRoomBySlug fallback:", error.message);
+    console.error("Supabase getRoomBySlug:", error.message);
     return null;
   }
   return normalizeRoom(data);
@@ -151,13 +165,9 @@ export async function getSuburbStats() {
     return statsFromRooms(mockRooms);
   }
 
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return statsFromRooms(mockRooms);
-
-  const { data, error } = await supabase
-    .from("rooms")
-    .select("suburb, is_published")
-    .eq("is_published", true);
+  const { data, error } = await queryRooms((supabase) =>
+    supabase.from("rooms").select("suburb, is_published").eq("is_published", true),
+  );
 
   if (error) {
     console.error("Supabase getSuburbStats:", error.message);

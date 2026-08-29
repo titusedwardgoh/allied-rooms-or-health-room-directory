@@ -26,22 +26,14 @@ function looksLikeKey(key) {
   return key.length > 10 && !key.includes("YOUR_KEY") && !key.includes("YOUR_SECRET");
 }
 
-function supabaseFetch(key) {
-  return (input, init = {}) => {
-    const headers = new Headers(init.headers);
-    headers.set("apikey", key);
-    if (key.startsWith("sb_")) {
-      headers.delete("Authorization");
-    }
-    headers.set("User-Agent", "alliedrooms-server/1.0");
-    return fetch(input, { ...init, headers, cache: "no-store" });
-  };
+function supabaseFetch() {
+  return (input, init = {}) => fetch(input, { ...init, cache: "no-store" });
 }
 
 function makeClient(url, key) {
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
-    global: { fetch: supabaseFetch(key) },
+    global: { fetch: supabaseFetch() },
   });
 }
 

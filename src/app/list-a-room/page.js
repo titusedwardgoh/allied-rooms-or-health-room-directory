@@ -9,6 +9,7 @@ import {
   pricePerDayLabel,
 } from "@/lib/format";
 import { createRoomListing } from "./actions";
+import { practiceDetailsError } from "@/lib/validate";
 
 const STEPS = ["Practice", "Room", "Photos & review"];
 
@@ -27,11 +28,21 @@ const INITIAL = {
   description: "",
 };
 
-function Field({ label, children }) {
+function Field({ label, required, optional, children }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">
+      <span className="mb-1.5 flex items-baseline gap-1.5 text-xs font-bold uppercase tracking-wider text-stone-400">
         {label}
+        {required ? (
+          <span className="font-semibold normal-case tracking-normal text-teal-900">
+            Required
+          </span>
+        ) : null}
+        {optional ? (
+          <span className="font-medium normal-case tracking-normal text-stone-400">
+            Optional
+          </span>
+        ) : null}
       </span>
       {children}
     </label>
@@ -42,6 +53,8 @@ const MAX_PHOTO_BYTES = 6 * 1024 * 1024;
 
 const inputClass =
   "w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm font-medium text-stone-900 placeholder-stone-400 outline-none focus:border-teal-800 focus:ring-2 focus:ring-teal-900/15";
+
+const selectClass = `${inputClass} cursor-pointer`;
 
 function actionErrorMessage(state) {
   if (!state || typeof state !== "object") return "";
@@ -110,9 +123,12 @@ export default function ListARoomPage() {
 
   function validateStep(currentStep) {
     if (currentStep === 1) {
-      if (!values.practice_name.trim() || !values.contact_email.trim()) {
-        return "Practice name and contact email are required.";
-      }
+      return practiceDetailsError({
+        practiceName: values.practice_name,
+        contactEmail: values.contact_email,
+        phone: values.phone,
+        websiteUrl: values.website_url,
+      });
     }
     if (currentStep === 2) {
       if (!values.title.trim() || !values.suburb.trim()) {
@@ -204,10 +220,10 @@ export default function ListARoomPage() {
 
           <section className={step === 1 ? "space-y-4" : "hidden"}>
             <p className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-stone-500">
-              Practice name, email, and phone are shown on the public room page so
+              Practice name, email, and phone are shown on the listing page so
               practitioners can enquire directly.
             </p>
-            <Field label="Practice name">
+            <Field label="Practice name" required>
               <input
                 name="practice_name"
                 value={values.practice_name}
@@ -215,8 +231,11 @@ export default function ListARoomPage() {
                 className={inputClass}
                 placeholder="Richmond Wellness Collective"
               />
+              <span className="mt-1 block text-xs text-stone-400">
+                At least 4 characters.
+              </span>
             </Field>
-            <Field label="Contact email">
+            <Field label="Contact email" required>
               <input
                 type="email"
                 name="contact_email"
@@ -226,23 +245,33 @@ export default function ListARoomPage() {
                 placeholder="hello@clinic.com.au"
               />
             </Field>
-            <Field label="Phone number">
+            <Field label="Phone number" required>
               <input
                 name="phone"
+                inputMode="tel"
+                autoComplete="tel"
                 value={values.phone}
                 onChange={(e) => update("phone", e.target.value)}
                 className={inputClass}
                 placeholder="03 9000 0000"
               />
+              <span className="mt-1 block text-xs text-stone-400">
+                10 digits, starting with 02, 03, 04, 07 or 08.
+              </span>
             </Field>
-            <Field label="Website">
+            <Field label="Website" optional>
               <input
                 name="website_url"
+                inputMode="url"
+                autoComplete="url"
                 value={values.website_url}
                 onChange={(e) => update("website_url", e.target.value)}
                 className={inputClass}
-                placeholder="https://"
+                placeholder="https://clinic.com.au"
               />
+              <span className="mt-1 block text-xs text-stone-400">
+                Leave blank if you do not have a website.
+              </span>
             </Field>
           </section>
 
@@ -271,7 +300,7 @@ export default function ListARoomPage() {
                   name="state"
                   value={values.state}
                   onChange={(e) => update("state", e.target.value)}
-                  className={inputClass}
+                  className={selectClass}
                 >
                   {AU_STATES.map((state) => (
                     <option key={state} value={state}>
@@ -287,7 +316,7 @@ export default function ListARoomPage() {
                   name="room_type"
                   value={values.room_type}
                   onChange={(e) => update("room_type", e.target.value)}
-                  className={inputClass}
+                  className={selectClass}
                 >
                   {Object.entries(ROOM_TYPE_LABEL).map(([key, label]) => (
                     <option key={key} value={key}>
@@ -344,7 +373,7 @@ export default function ListARoomPage() {
                 {Object.entries(AMENITY_LABEL).map(([key, label]) => (
                   <label
                     key={key}
-                    className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700"
+                    className="flex cursor-pointer items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700"
                   >
                     <input
                       type="checkbox"
@@ -389,7 +418,7 @@ export default function ListARoomPage() {
               </p>
               <button
                 type="button"
-                className="mt-4 rounded-lg border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-100"
+                className="mt-4 cursor-pointer rounded-lg border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-100"
                 onClick={(e) => {
                   e.stopPropagation();
                   fileInputRef.current?.click();
@@ -423,7 +452,7 @@ export default function ListARoomPage() {
                         e.stopPropagation();
                         setPhotos((current) => current.filter((_, i) => i !== index));
                       }}
-                      className="absolute right-1.5 top-1.5 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-stone-700 hover:bg-white"
+                      className="absolute right-1.5 top-1.5 cursor-pointer rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-stone-700 hover:bg-white"
                     >
                       Remove
                     </button>
@@ -465,7 +494,7 @@ export default function ListARoomPage() {
               type="button"
               onClick={goBack}
               disabled={step === 1 || pending}
-              className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-700 disabled:opacity-40"
+              className="rounded-full cursor-pointer border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-700 disabled:opacity-40"
             >
               Back
             </button>
@@ -475,7 +504,7 @@ export default function ListARoomPage() {
                 key="continue"
                 type="button"
                 onClick={goNext}
-                className="rounded-full bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-950"
+                className="rounded-full cursor-pointer bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-950"
               >
                 Continue
               </button>
@@ -487,7 +516,7 @@ export default function ListARoomPage() {
                 onClick={(event) => {
                   event.currentTarget.form?.requestSubmit();
                 }}
-                className="rounded-full bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-950 disabled:opacity-60"
+                className="rounded-full cursor-pointer bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-950 disabled:opacity-60"
               >
                 {pending ? "Publishing…" : "Publish listing"}
               </button>

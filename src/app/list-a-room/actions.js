@@ -4,6 +4,12 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { slugify } from "@/lib/format";
 import { createSupabaseAdminClient } from "@/lib/supabase";
+import {
+  isAuPhone,
+  normalizeWebsiteUrl,
+  practiceDetailsError,
+  toAuPhoneDigits,
+} from "@/lib/validate";
 
 const ROOM_TYPES = ["talk_therapy", "bodywork", "medical"];
 const STATES = ["VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT"];
@@ -20,11 +26,6 @@ const AMENITIES = [
 ];
 const MAX_PHOTOS = 6;
 const MAX_PHOTO_BYTES = 6 * 1024 * 1024;
-
-function emptyToNull(value) {
-  const trimmed = String(value ?? "").trim();
-  return trimmed ? trimmed : null;
-}
 
 async function uniqueSlug(admin, title, suburb) {
   const base = slugify(`${title}-${suburb}`) || "room";
@@ -110,8 +111,23 @@ export async function createRoomListing(prevState, formData) {
 
     const practiceName = String(formData.get("practice_name") ?? "").trim();
     const contactEmail = String(formData.get("contact_email") ?? "").trim();
-    const phone = emptyToNull(formData.get("phone"));
-    const websiteUrl = emptyToNull(formData.get("website_url"));
+    const phoneRaw = String(formData.get("phone") ?? "").trim();
+    const websiteRaw = String(formData.get("website_url") ?? "").trim();
+    const practiceError = practiceDetailsError({
+      practiceName,
+      contactEmail,
+      phone: phoneRaw,
+      websiteUrl: websiteRaw,
+    });
+    if (practiceError) {
+      return { error: practiceError };
+    }
+
+    const phone = isAuPhone(phoneRaw) ? toAuPhoneDigits(phoneRaw) : null;
+    const websiteUrl =
+      websiteRaw && !/^https?:\/\/$/i.test(websiteRaw)
+        ? normalizeWebsiteUrl(websiteRaw)
+        : null;
     const title = String(formData.get("title") ?? "").trim();
     const suburb = String(formData.get("suburb") ?? "").trim();
     const state = String(formData.get("state") ?? "VIC").trim();
@@ -128,12 +144,6 @@ export async function createRoomListing(prevState, formData) {
       .filter((item) => AMENITIES.includes(item));
     const photos = collectPhotos(formData);
 
-    if (!practiceName || !contactEmail) {
-      return { error: "Practice name and contact email are required." };
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
-      return { error: "Enter a valid contact email." };
-    }
     if (!title || !suburb) {
       return { error: "Room title and suburb are required." };
     }

@@ -1,7 +1,9 @@
 export const ROOM_TYPE_LABEL = {
-  talk_therapy: "Talk Therapy",
-  bodywork: "Physical / Bodywork",
-  medical: "Medical Consulting",
+  talk_therapy: "Talk Therapy & Consulting", // Armchairs, desk, acoustic treatment
+  bodywork: "Treatment Table / Plinth", // Electric/manual table, floor space
+  medical: "Clinical & Medical", // Hand basin, medical flooring/specs
+  flexible: "Multidisciplinary / Hybrid", // Combo setup or open floor space
+  other: "Other",
 };
 
 export const DAY_LABEL = {

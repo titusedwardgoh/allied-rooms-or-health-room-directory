@@ -19,7 +19,7 @@ export default async function Home() {
           </span>
 
           <h1 className="mt-6 font-sans text-4xl font-extrabold tracking-tight text-stone-900 sm:text-6xl sm:leading-[1.1]">
-            A consulting room, <br className="hidden sm:inline" />
+            Find consulting rooms, <br className="hidden sm:inline" />
             <span className="font-extrabold text-teal-900">by the day.</span>
           </h1>
 

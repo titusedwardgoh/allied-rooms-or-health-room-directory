@@ -11,7 +11,15 @@ import {
   toAuPhoneDigits,
 } from "@/lib/validate";
 
-const ROOM_TYPES = ["talk_therapy", "bodywork", "medical"];
+const ROOM_TYPES = [
+  "talk_therapy",
+  "bodywork",
+  "medical",
+  "flexible",
+  "other",
+];
+const MIN_DESCRIPTION_CHARS = 30;
+const MAX_DESCRIPTION_CHARS = 1500;
 const STATES = ["VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT"];
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const AMENITIES = [
@@ -144,8 +152,21 @@ export async function createRoomListing(prevState, formData) {
       .filter((item) => AMENITIES.includes(item));
     const photos = collectPhotos(formData);
 
-    if (!title || !suburb) {
-      return { error: "Room title and suburb are required." };
+    if (!title || title.length < 8) {
+      return { error: "Room title must be at least 8 characters long." };
+    }
+    if (!suburb) {
+      return { error: "Suburb is required." };
+    }
+    if (!description || description.length < MIN_DESCRIPTION_CHARS) {
+      return {
+        error: `Description must be at least ${MIN_DESCRIPTION_CHARS} characters.`,
+      };
+    }
+    if (description.length > MAX_DESCRIPTION_CHARS) {
+      return {
+        error: `Description must be ${MAX_DESCRIPTION_CHARS} characters or fewer.`,
+      };
     }
     if (!STATES.includes(state)) {
       return { error: "Choose a valid Australian state." };

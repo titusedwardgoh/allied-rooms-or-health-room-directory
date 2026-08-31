@@ -23,3 +23,13 @@ body {
 ::selection {
   background-color: color-mix(in srgb, var(--color-sage) 18%, white);
 }
+
+/* Keep react-easy-crop contain-fit working against Tailwind img preflight. */
+.photo-crop-stage .reactEasyCrop_Image {
+  height: unset;
+  width: unset;
+}
+.photo-crop-stage .reactEasyCrop_Contain {
+  max-width: 100% !important;
+  max-height: 100% !important;
+}

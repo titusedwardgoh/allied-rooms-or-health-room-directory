@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getRoomBySlug } from "@/lib/rooms";
 import { DAY_LABEL, ROOM_TYPE_LABEL, pricePerDayLabel } from "@/lib/format";
-import RoomPlaceholder from "@/components/RoomPlaceholder";
+import RoomGallery from "@/components/RoomGallery";
 
 export const dynamic = "force-dynamic";
 
@@ -26,18 +26,11 @@ export default async function RoomDetailPage({ params }) {
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_360px]">
         <div>
-          <div className="aspect-[16/9] w-full overflow-hidden rounded-2xl border border-stone-200 bg-stone-100">
-            {room.image_urls && room.image_urls.length > 0 ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={room.image_urls[0]}
-                alt={room.title}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <RoomPlaceholder roomType={room.room_type} />
-            )}
-          </div>
+          <RoomGallery
+            images={room.image_urls}
+            title={room.title}
+            roomType={room.room_type}
+          />
 
           <div className="mt-6">
             <span className="rounded-full bg-stone-200/70 px-3 py-1 text-xs font-semibold text-stone-700">

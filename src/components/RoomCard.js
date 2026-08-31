@@ -8,13 +8,13 @@ export default function RoomCard({ room }) {
       href={`/rooms/${room.slug}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-stone-200/80 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-stone-900/5"
     >
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-stone-100">
+      <div className="relative aspect-video w-full overflow-hidden bg-stone-100">
         {room.image_urls && room.image_urls.length > 0 ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={room.image_urls[0]}
             alt={room.title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
           <RoomPlaceholder roomType={room.room_type} />

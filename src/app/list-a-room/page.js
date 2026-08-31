@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   AMENITY_LABEL,
   AU_STATES,
@@ -10,6 +10,8 @@ import {
 } from "@/lib/format";
 import { createRoomListing } from "./actions";
 import { practiceDetailsError } from "@/lib/validate";
+import PhotoCropModal from "@/components/PhotoCropModal";
+import { fileToDataUrl, ensurePhotoFile } from "@/lib/cropImage";
 
 const STEPS = ["Practice", "Room", "Photos & review"];
 
@@ -49,7 +51,21 @@ function Field({ label, required, optional, children }) {
   );
 }
 
+function FormError({ message }) {
+  if (!message) return null;
+  return (
+    <p
+      role="alert"
+      className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+    >
+      {message}
+    </p>
+  );
+}
+
 const MAX_PHOTO_BYTES = 6 * 1024 * 1024;
+const MIN_PHOTO_WIDTH = 800;
+const MIN_PHOTO_HEIGHT = 500;
 
 const inputClass =
   "w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm font-medium text-stone-900 placeholder-stone-400 outline-none focus:border-teal-800 focus:ring-2 focus:ring-teal-900/15";
@@ -65,30 +81,61 @@ function scrollToTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function validateImageDimensions(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      if (img.width < MIN_PHOTO_WIDTH || img.height < MIN_PHOTO_HEIGHT) {
+        resolve({
+          valid: false,
+          error: `"${file.name}" is too low resolution (${img.width}×${img.height}px). Photos must be at least ${MIN_PHOTO_WIDTH}×${MIN_PHOTO_HEIGHT}px.`,
+        });
+      } else {
+        resolve({ valid: true });
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve({
+        valid: false,
+        error: `Could not read image "${file.name}".`,
+      });
+    };
+    img.src = url;
+  });
+}
+
+function reorderPhotos(list, indexToPromote) {
+  if (indexToPromote === 0) return list;
+  const target = list[indexToPromote];
+  return [target, ...list.filter((_, i) => i !== indexToPromote)];
+}
+
 export default function ListARoomPage() {
   const [step, setStep] = useState(1);
   const [values, setValues] = useState(INITIAL);
   const [photos, setPhotos] = useState([]);
+  const [originals, setOriginals] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState([]);
+  const [editingIndex, setEditingIndex] = useState(null);
   const [stepError, setStepError] = useState("");
   const [state, formAction, pending] = useActionState(createRoomListing, null);
   const fileInputRef = useRef(null);
 
-  const previews = useMemo(
-    () => photos.map((file) => ({ name: file.name, url: URL.createObjectURL(file) })),
-    [photos],
-  );
-
-  useEffect(() => {
-    return () => {
-      previews.forEach((photo) => URL.revokeObjectURL(photo.url));
-    };
-  }, [previews]);
-
-  useEffect(() => {
+  function syncPhotosToInput(nextPhotos) {
     if (!fileInputRef.current || typeof DataTransfer === "undefined") return;
     const transfer = new DataTransfer();
-    photos.forEach((file) => transfer.items.add(file));
+    nextPhotos.forEach((item) => {
+      const file = ensurePhotoFile(item);
+      if (file) transfer.items.add(file);
+    });
     fileInputRef.current.files = transfer.files;
+  }
+
+  useEffect(() => {
+    syncPhotosToInput(photos);
   }, [photos]);
 
   function update(name, value) {
@@ -107,18 +154,54 @@ export default function ListARoomPage() {
     });
   }
 
-  function addFiles(fileList) {
-    const incoming = Array.from(fileList || [])
-      .filter((file) => file.type.startsWith("image/"))
-      .filter((file) => file.size <= MAX_PHOTO_BYTES);
+  async function addFiles(fileList) {
+    const rawIncoming = Array.from(fileList || []).filter((file) =>
+      file.type.startsWith("image/"),
+    );
 
-    if (incoming.length === 0 && (fileList?.length ?? 0) > 0) {
-      setStepError("Each photo must be an image of 6MB or smaller.");
+    if (rawIncoming.length === 0 && (fileList?.length ?? 0) > 0) {
+      setStepError("Only image files are accepted.");
+      syncPhotosToInput(photos);
       return;
     }
 
+    const sizeValid = rawIncoming.filter((file) => file.size <= MAX_PHOTO_BYTES);
+    if (sizeValid.length < rawIncoming.length) {
+      setStepError("Each photo must be 6MB or smaller.");
+      syncPhotosToInput(photos);
+      return;
+    }
+
+    const checkedFiles = [];
+    for (const file of sizeValid) {
+      const result = await validateImageDimensions(file);
+      if (!result.valid) {
+        setStepError(result.error);
+        syncPhotosToInput(photos);
+        return;
+      }
+      checkedFiles.push(file);
+    }
+
     setStepError("");
-    setPhotos((current) => [...current, ...incoming].slice(0, 6));
+    const remaining = 6 - photos.length;
+    const accepted = checkedFiles.slice(0, remaining);
+    const urls = await Promise.all(accepted.map((file) => fileToDataUrl(file)));
+    setPhotos((current) => [...current, ...accepted]);
+    setOriginals((current) => [...current, ...accepted]);
+    setPreviewUrls((current) => [...current, ...urls]);
+  }
+
+  function makeCoverPhoto(indexToPromote) {
+    setPhotos((current) => reorderPhotos(current, indexToPromote));
+    setOriginals((current) => reorderPhotos(current, indexToPromote));
+    setPreviewUrls((current) => reorderPhotos(current, indexToPromote));
+  }
+
+  function removePhoto(index) {
+    setPhotos((current) => current.filter((_, i) => i !== index));
+    setOriginals((current) => current.filter((_, i) => i !== index));
+    setPreviewUrls((current) => current.filter((_, i) => i !== index));
   }
 
   function validateStep(currentStep) {
@@ -131,14 +214,23 @@ export default function ListARoomPage() {
       });
     }
     if (currentStep === 2) {
-      if (!values.title.trim() || !values.suburb.trim()) {
-        return "Room title and suburb are required.";
+      if (!values.title.trim() || values.title.trim().length < 8) {
+        return "Room title must be at least 8 characters long.";
+      }
+      if (!values.suburb.trim()) {
+        return "Suburb is required.";
       }
       if (!Number(values.price_per_day) || Number(values.price_per_day) <= 0) {
         return "Enter a daily rate greater than $0.";
       }
       if (values.available_days.length === 0) {
         return "Select at least one available day.";
+      }
+      if (!values.description.trim() || values.description.trim().length < 30) {
+        return "Description must be at least 30 characters long.";
+      }
+      if (values.description.trim().length > 1500) {
+        return "Description must be 1500 characters or fewer.";
       }
     }
     return "";
@@ -276,17 +368,21 @@ export default function ListARoomPage() {
           </section>
 
           <section className={step === 2 ? "space-y-4" : "hidden"}>
-            <Field label="Room title">
+            <Field label="Room title" required>
               <input
                 name="title"
                 value={values.title}
                 onChange={(e) => update("title", e.target.value)}
                 className={inputClass}
                 placeholder="Acoustic psychotherapy suite"
+                minLength={8}
               />
+              <span className="mt-1 block text-xs text-stone-400">
+                At least 8 characters ({values.title.length}/8).
+              </span>
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Suburb">
+              <Field label="Suburb" required>
                 <input
                   name="suburb"
                   value={values.suburb}
@@ -325,7 +421,7 @@ export default function ListARoomPage() {
                   ))}
                 </select>
               </Field>
-              <Field label="Daily rate (AUD)">
+              <Field label="Daily rate (AUD)" required>
                 <input
                   type="number"
                   min="1"
@@ -339,8 +435,11 @@ export default function ListARoomPage() {
               </Field>
             </div>
             <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-stone-400">
+              <p className="mb-2 flex items-baseline gap-1.5 text-xs font-bold uppercase tracking-wider text-stone-400">
                 Available days
+                <span className="font-semibold normal-case tracking-normal text-teal-900">
+                  Required
+                </span>
               </p>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(DAY_LABEL).map(([key, label]) => (
@@ -388,15 +487,32 @@ export default function ListARoomPage() {
                 ))}
               </div>
             </div>
-            <Field label="Description">
+            <Field label="Description" required>
               <textarea
                 name="description"
                 rows={4}
                 value={values.description}
                 onChange={(e) => update("description", e.target.value)}
                 className={inputClass}
-                placeholder="Light, acoustic treatment, shared waiting room..."
+                placeholder="Natural light, acoustic treatment, shared waiting room, practitioner kitchenette..."
+                minLength={30}
+                maxLength={1500}
               />
+              <div className="mt-1 flex items-center justify-between text-xs text-stone-400">
+                <span>
+                  Describe light, acoustic treatment, parking, and shared
+                  amenities.
+                </span>
+                <span
+                  className={
+                    values.description.length > 1400
+                      ? "font-semibold text-amber-700"
+                      : ""
+                  }
+                >
+                  {values.description.length}/1500
+                </span>
+              </div>
             </Field>
           </section>
 
@@ -408,13 +524,19 @@ export default function ListARoomPage() {
                 addFiles(e.dataTransfer.files);
               }}
               onClick={() => fileInputRef.current?.click()}
-              className="block cursor-pointer rounded-2xl border border-dashed border-stone-300 bg-white px-4 py-10 text-center transition-colors hover:border-teal-800"
+              className={`block cursor-pointer rounded-2xl border border-dashed bg-white px-4 py-10 text-center transition-colors hover:border-teal-800 ${
+                stepError
+                  ? "border-red-300"
+                  : "border-stone-300"
+              }`}
             >
               <p className="text-sm font-semibold text-stone-800">
-                Drag photos here, or click to select files
+                Drag high-res photos here, or click to select files
               </p>
               <p className="mt-1 text-xs text-stone-500">
-                Up to 6 images, 6MB each. Optional — SVG placeholders are used if you skip this.
+                Up to 6 landscape photos. Minimum resolution:{" "}
+                <strong>800 × 500 px</strong> (6MB max). Optional — placeholders
+                are used if you skip this.
               </p>
               <button
                 type="button"
@@ -437,35 +559,95 @@ export default function ListARoomPage() {
               />
             </div>
 
-            {previews.length > 0 && (
-              <div className="grid grid-cols-3 gap-3">
-                {previews.map((photo, index) => (
-                  <div
-                    key={photo.url}
-                    className="relative overflow-hidden rounded-xl border border-stone-200 bg-stone-100"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={photo.url} alt="" className="aspect-square w-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPhotos((current) => current.filter((_, i) => i !== index));
-                      }}
-                      className="absolute right-1.5 top-1.5 cursor-pointer rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-stone-700 hover:bg-white"
+            {step === 3 && stepError ? <FormError message={stepError} /> : null}
+
+            {previewUrls.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
+                    Listing photos ({previewUrls.length}/6)
+                  </p>
+                  <p className="text-xs text-stone-500">
+                    First photo is your main header card. Edit to reposition in
+                    the 16:9 frame.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {previewUrls.map((url, index) => (
+                    <div
+                      key={`${photos[index]?.name || "photo"}-${index}`}
+                      className="group relative overflow-hidden rounded-xl border border-stone-200 bg-stone-100"
                     >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+                      <div className="aspect-video w-full overflow-hidden bg-stone-900">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt=""
+                          className="h-full w-full object-cover object-center"
+                        />
+                      </div>
+
+                      {index === 0 ? (
+                        <span className="absolute left-2 top-2 rounded-md bg-teal-900/90 px-2 py-0.5 text-[10px] font-bold text-white">
+                          Hero Cover
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            makeCoverPhoto(index);
+                          }}
+                          className="absolute left-2 top-2 cursor-pointer rounded-md bg-stone-900/75 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-teal-900"
+                        >
+                          Make Cover
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingIndex(index);
+                        }}
+                        className="absolute bottom-2 left-2 cursor-pointer rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-stone-700 hover:bg-white"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removePhoto(index);
+                        }}
+                        className="absolute right-2 top-2 cursor-pointer rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-stone-700 hover:bg-white"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
             <div className="rounded-2xl border border-stone-200 bg-white p-5">
               <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
-                Review
+                Review listing
               </p>
-              <h2 className="mt-2 text-xl font-bold text-stone-900">
+
+              {previewUrls.length > 0 ? (
+                <div className="mt-3 aspect-video w-full overflow-hidden rounded-xl border border-stone-200 bg-stone-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={previewUrls[0]}
+                    alt="Hero preview"
+                    className="h-full w-full object-cover object-center"
+                  />
+                </div>
+              ) : null}
+
+              <h2 className="mt-3 text-xl font-bold text-stone-900">
                 {values.title || "Untitled room"}
               </h2>
               <p className="mt-1 text-sm text-stone-500">
@@ -483,11 +665,9 @@ export default function ListARoomPage() {
             </div>
           </section>
 
-          {(stepError || actionError) && (
-            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-              {stepError || actionError}
-            </p>
-          )}
+          {((step < 3 && stepError) || actionError) ? (
+            <FormError message={step < 3 ? stepError || actionError : actionError} />
+          ) : null}
 
           <div className="flex items-center justify-between gap-3">
             <button
@@ -524,6 +704,35 @@ export default function ListARoomPage() {
           </div>
         </form>
       </div>
+
+      {editingIndex != null && originals[editingIndex] ? (
+        <PhotoCropModal
+          file={originals[editingIndex]}
+          onClose={() => setEditingIndex(null)}
+          onSave={(cropped) => {
+            const nextFile = ensurePhotoFile(
+              cropped instanceof File ? cropped : cropped?.file,
+              originals[editingIndex]?.name || "photo.jpg",
+            );
+            const nextPreview =
+              typeof cropped?.previewUrl === "string"
+                ? cropped.previewUrl
+                : previewUrls[editingIndex];
+            if (!nextFile) return;
+            setPhotos((current) =>
+              current.map((photo, i) => (i === editingIndex ? nextFile : photo)),
+            );
+            if (nextPreview) {
+              setPreviewUrls((current) =>
+                current.map((url, i) =>
+                  i === editingIndex ? nextPreview : url,
+                ),
+              );
+            }
+            setEditingIndex(null);
+          }}
+        />
+      ) : null}
     </main>
   );
 }

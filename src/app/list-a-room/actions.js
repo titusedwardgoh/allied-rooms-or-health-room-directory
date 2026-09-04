@@ -22,6 +22,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase";
 import {
   isAuPhone,
   normalizeWebsiteUrl,
+  addressLineError,
   dailyRateError,
   practiceDetailsError,
   toAuPhoneDigits,
@@ -181,6 +182,7 @@ export async function createRoomListing(prevState, formData) {
         ? normalizeWebsiteUrl(websiteRaw)
         : null;
     const title = String(formData.get("title") ?? "").trim();
+    const addressLine = String(formData.get("address_line") ?? "").trim();
     const suburb = String(formData.get("suburb") ?? "").trim();
     const state = String(formData.get("state") ?? "VIC").trim();
     const roomType = String(formData.get("room_type") ?? "").trim();
@@ -210,6 +212,10 @@ export async function createRoomListing(prevState, formData) {
 
     if (!title || title.length < 8) {
       return { error: "Room title must be at least 8 characters long." };
+    }
+    const streetError = addressLineError(addressLine);
+    if (streetError) {
+      return { error: streetError };
     }
     if (!suburb) {
       return { error: "Suburb is required." };
@@ -275,6 +281,7 @@ export async function createRoomListing(prevState, formData) {
       host_id: profile.id,
       title,
       slug,
+      address_line: addressLine,
       suburb,
       state,
       price_per_day_cents: pricePerDayCents,

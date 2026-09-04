@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { roomLocationLabel } from "@/lib/auAddress";
 import { getRoomBySlug } from "@/lib/db/rooms";
 import {
   DAY_LABEL,
@@ -47,7 +48,7 @@ export default async function RoomDetailPage({ params }) {
               {room.title}
             </h1>
             <p className="mt-1 text-sm font-medium text-stone-500">
-              {room.suburb}, {room.state} · Hosted by {host.practice_name || "the clinic"}
+              {roomLocationLabel(room)} · Hosted by {host.practice_name || "the clinic"}
             </p>
           </div>
 

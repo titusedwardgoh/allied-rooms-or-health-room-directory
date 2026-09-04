@@ -18,11 +18,13 @@ import {
 } from "@/lib/format";
 import { captureListingLead, createRoomListing } from "./actions";
 import {
+  addressLineError,
   MAX_PRICE_PER_DAY_DOLLARS,
   dailyRateError,
   practiceDetailsError,
 } from "@/lib/validate";
 import PhotoCropModal from "@/components/PhotoCropModal";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import RoomPlaceholder from "@/components/RoomPlaceholder";
 import { fileToDataUrl, ensurePhotoFile } from "@/lib/cropImage";
 import { FadeIn } from "@/components/FadeIn";
@@ -47,6 +49,7 @@ const INITIAL = {
   phone: "",
   website_url: "",
   title: "",
+  address_line: "",
   suburb: "",
   state: "VIC",
   room_type: "talk_therapy",
@@ -260,6 +263,8 @@ export default function ListARoomPage() {
       if (!values.title.trim() || values.title.trim().length < 8) {
         return "Room title must be at least 8 characters long.";
       }
+      const streetError = addressLineError(values.address_line);
+      if (streetError) return streetError;
       if (!values.suburb.trim()) {
         return "Suburb is required.";
       }
@@ -480,6 +485,27 @@ export default function ListARoomPage() {
               />
               <span className="mt-1 block text-xs text-stone-400">
                 At least 8 characters ({values.title.length}/8).
+              </span>
+            </Field>
+            <Field label="Address" required>
+              <AddressAutocomplete
+                name="address_line"
+                value={values.address_line}
+                onChange={(address) => update("address_line", address)}
+                onResolved={({ addressLine, suburb, state }) => {
+                  setValues((current) => ({
+                    ...current,
+                    address_line: addressLine || current.address_line,
+                    suburb: suburb || current.suburb,
+                    state: AU_STATES.includes(state) ? state : current.state,
+                  }));
+                }}
+                className={inputClass}
+                placeholder="12 Bridge Road"
+              />
+              <span className="mt-1 block text-xs text-stone-400">
+                Start typing an Australian address and pick a suggestion, or type
+                it yourself.
               </span>
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -805,8 +831,10 @@ export default function ListARoomPage() {
                 {values.title || "Untitled room"}
               </h2>
               <p className="mt-1 text-sm font-medium text-stone-500">
-                {values.suburb || "Suburb"}, {values.state} · Hosted by{" "}
-                {values.practice_name || "the clinic"}
+                {[values.address_line, values.suburb || "Suburb", values.state]
+                  .filter(Boolean)
+                  .join(", ")}{" "}
+                · Hosted by {values.practice_name || "the clinic"}
               </p>
 
               <div className="mt-5 border-t border-stone-200 pt-4">

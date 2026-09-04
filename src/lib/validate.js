@@ -1,4 +1,5 @@
 export const MIN_PRACTICE_NAME_LENGTH = 4;
+export const MIN_ADDRESS_LINE_LENGTH = 5;
 export const MAX_PRICE_PER_DAY_DOLLARS = 2000;
 
 export function toAuPhoneDigits(value) {
@@ -39,6 +40,13 @@ export function isWebsiteUrl(value) {
   } catch {
     return false;
   }
+}
+
+export function addressLineError(value) {
+  if (String(value ?? "").trim().length < MIN_ADDRESS_LINE_LENGTH) {
+    return "Enter a street address, or pick one from the suggestions.";
+  }
+  return "";
 }
 
 export function dailyRateError(value) {

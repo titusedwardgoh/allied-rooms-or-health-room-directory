@@ -1,4 +1,5 @@
 export const MIN_PRACTICE_NAME_LENGTH = 4;
+export const MAX_PRICE_PER_DAY_DOLLARS = 2000;
 
 export function toAuPhoneDigits(value) {
   let digits = String(value ?? "").replace(/\D/g, "");
@@ -38,6 +39,17 @@ export function isWebsiteUrl(value) {
   } catch {
     return false;
   }
+}
+
+export function dailyRateError(value) {
+  const dollars = Number(value);
+  if (!Number.isFinite(dollars) || dollars <= 0) {
+    return "Enter a daily rate greater than $0.";
+  }
+  if (dollars > MAX_PRICE_PER_DAY_DOLLARS) {
+    return `Daily rate must be $2,000 or less.`;
+  }
+  return "";
 }
 
 export function practiceDetailsError({ practiceName, contactEmail, phone, websiteUrl }) {

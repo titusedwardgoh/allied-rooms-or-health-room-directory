@@ -1,11 +1,12 @@
-import { mockRooms } from "./mockData";
+import { slugify } from "@/lib/format";
+import { mockRooms } from "@/lib/mockData";
 import {
   createSupabaseAdminClient,
   createSupabaseClient,
   isSupabaseConfigured,
   roomSelect,
   roomSelectPlain,
-} from "./supabase";
+} from "@/lib/supabase";
 
 function supabaseReaders() {
   return [createSupabaseAdminClient(), createSupabaseClient()].filter(Boolean);
@@ -178,4 +179,33 @@ export async function getSuburbStats() {
 
 export function usingSupabase() {
   return isSupabaseConfigured();
+}
+
+export async function uniqueSlug(admin, title, suburb) {
+  const base = slugify(`${title}-${suburb}`) || "room";
+  let slug = base;
+  let n = 2;
+
+  while (n < 50) {
+    const { data, error } = await admin
+      .from("rooms")
+      .select("id")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    if (error) return { error: error.message };
+    if (!data) return { slug };
+    slug = `${base}-${n}`;
+    n += 1;
+  }
+
+  return { slug: `${base}-${Date.now()}` };
+}
+
+export async function insertPublishedRoom(admin, room) {
+  return admin.from("rooms").insert(room).select("id, slug").single();
+}
+
+export async function updateRoomImageUrls(admin, roomId, imageUrls) {
+  return admin.from("rooms").update({ image_urls: imageUrls }).eq("id", roomId);
 }

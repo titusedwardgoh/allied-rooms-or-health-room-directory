@@ -1,8 +1,30 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 export default function SiteHeader() {
+  const [entered, setEntered] = useState(false);
+
+  useEffect(() => {
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setEntered(true));
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      cancelAnimationFrame(inner);
+    };
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-stone-50/80 backdrop-blur-md">
+    <motion.header
+      initial={{ opacity: 0, y: -12 }}
+      animate={entered ? { opacity: 1, y: 0 } : { opacity: 0, y: -12 }}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      className="sticky top-0 z-50 border-b border-stone-200/80 bg-stone-50/80 backdrop-blur-md"
+    >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="group flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-900 text-xs font-bold tracking-wider text-stone-50">
@@ -33,6 +55,6 @@ export default function SiteHeader() {
           </Link>
         </nav>
       </div>
-    </header>
+    </motion.header>
   );
 }

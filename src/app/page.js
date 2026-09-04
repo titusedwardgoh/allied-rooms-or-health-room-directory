@@ -2,7 +2,8 @@ import Link from "next/link";
 import SearchBar from "@/components/SearchBar";
 import RoomCard from "@/components/RoomCard";
 import SuburbBento from "@/components/SuburbBento";
-import { getFeaturedRooms, getSuburbStats } from "@/lib/rooms";
+import { FadeIn, FadeInOnView, Stagger, StaggerItem } from "@/components/FadeIn";
+import { getFeaturedRooms, getSuburbStats } from "@/lib/db/rooms";
 
 export const dynamic = "force-dynamic";
 
@@ -14,27 +15,33 @@ export default async function Home() {
     <main className="min-h-screen bg-stone-50">
       <section className="relative px-4 pb-12 pt-16 sm:px-6 sm:pt-24">
         <div className="mx-auto max-w-6xl text-center">
-          <span className="rounded-full bg-stone-200/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-stone-700">
-            Melbourne Allied Health
-          </span>
+          <FadeIn>
+            <span className="inline-block rounded-full bg-stone-200/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-stone-700">
+              Melbourne Allied Health
+            </span>
+          </FadeIn>
 
-          <h1 className="mt-6 font-sans text-4xl font-extrabold tracking-tight text-stone-900 sm:text-6xl sm:leading-[1.1]">
-            Find consulting rooms, <br className="hidden sm:inline" />
-            <span className="font-extrabold text-teal-900">by the day.</span>
-          </h1>
+          <FadeIn delay={0.08}>
+            <h1 className="mt-6 font-sans text-4xl font-extrabold tracking-tight text-stone-900 sm:text-6xl sm:leading-[1.1]">
+              Find consulting rooms, <br className="hidden sm:inline" />
+              <span className="font-extrabold text-teal-900">by the day.</span>
+            </h1>
+          </FadeIn>
 
-          <p className="mx-auto mt-4 max-w-xl text-base text-stone-600 sm:text-lg">
-            Sessional clinical spaces across Melbourne. Clear daily rates
-            upfront—no brokers, no membership walls.
-          </p>
+          <FadeIn delay={0.16}>
+            <p className="mx-auto mt-4 max-w-xl text-base text-stone-600 sm:text-lg">
+              Sessional clinical spaces across Melbourne. Clear daily rates
+              upfront—no brokers, no membership walls.
+            </p>
+          </FadeIn>
 
-          <div className="mt-10">
+          <FadeIn delay={0.24} className="mt-10">
             <SearchBar />
-          </div>
+          </FadeIn>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+      <FadeInOnView className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <div className="mb-6">
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
             Explore Locations
@@ -44,10 +51,10 @@ export default async function Home() {
           </h2>
         </div>
         <SuburbBento stats={stats} />
-      </section>
+      </FadeInOnView>
 
       <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <div className="mb-6 flex items-end justify-between">
+        <FadeInOnView className="mb-6 flex items-end justify-between">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
               Directory Highlights
@@ -62,13 +69,15 @@ export default async function Home() {
           >
             View all →
           </Link>
-        </div>
+        </FadeInOnView>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <Stagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {featured.map((room) => (
-            <RoomCard key={room.id} room={room} />
+            <StaggerItem key={room.id}>
+              <RoomCard room={room} />
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </section>
     </main>
   );

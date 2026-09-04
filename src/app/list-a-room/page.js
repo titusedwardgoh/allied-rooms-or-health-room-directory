@@ -1,19 +1,45 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   AMENITY_LABEL,
   AU_STATES,
+  CUSTOM_AMENITY_PREFIX,
   DAY_LABEL,
+  MAX_CUSTOM_AMENITY_CHARS,
+  MIN_CUSTOM_AMENITY_CHARS,
   ROOM_TYPE_LABEL,
+  amenityLabel,
+  customAmenityError,
+  normalizeCustomAmenity,
   pricePerDayLabel,
+  visibleAmenities,
 } from "@/lib/format";
-import { createRoomListing } from "./actions";
-import { practiceDetailsError } from "@/lib/validate";
+import { captureListingLead, createRoomListing } from "./actions";
+import {
+  MAX_PRICE_PER_DAY_DOLLARS,
+  dailyRateError,
+  practiceDetailsError,
+} from "@/lib/validate";
 import PhotoCropModal from "@/components/PhotoCropModal";
+import RoomPlaceholder from "@/components/RoomPlaceholder";
 import { fileToDataUrl, ensurePhotoFile } from "@/lib/cropImage";
+import { FadeIn } from "@/components/FadeIn";
 
 const STEPS = ["Practice", "Room", "Photos & review"];
+const TOTAL_STEPS = 3;
+
+function parseStepParam(value) {
+  const step = Number(value);
+  if (step === 2 || step === 3) return step;
+  return 1;
+}
+
+function stepHref(pathname, step) {
+  if (step <= 1) return pathname;
+  return `${pathname}?step=${step}`;
+}
 
 const INITIAL = {
   practice_name: "",
@@ -27,6 +53,7 @@ const INITIAL = {
   price_per_day: "",
   available_days: [],
   amenities: [],
+  amenities_other: "",
   description: "",
 };
 
@@ -66,6 +93,7 @@ function FormError({ message }) {
 const MAX_PHOTO_BYTES = 6 * 1024 * 1024;
 const MIN_PHOTO_WIDTH = 800;
 const MIN_PHOTO_HEIGHT = 500;
+const PHOTO_REQUIRED_ERROR = "Upload at least one photo.";
 
 const inputClass =
   "w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm font-medium text-stone-900 placeholder-stone-400 outline-none focus:border-teal-800 focus:ring-2 focus:ring-teal-900/15";
@@ -113,16 +141,30 @@ function reorderPhotos(list, indexToPromote) {
   return [target, ...list.filter((_, i) => i !== indexToPromote)];
 }
 
+function previewAmenityItems(amenities, amenitiesOther) {
+  const items = [...amenities];
+  const custom = normalizeCustomAmenity(amenitiesOther);
+  if (items.includes("other") && custom) {
+    items.push(`${CUSTOM_AMENITY_PREFIX}${custom}`);
+  }
+  return visibleAmenities(items);
+}
+
 export default function ListARoomPage() {
-  const [step, setStep] = useState(1);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [values, setValues] = useState(INITIAL);
   const [photos, setPhotos] = useState([]);
   const [originals, setOriginals] = useState([]);
   const [previewUrls, setPreviewUrls] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [stepError, setStepError] = useState("");
+  const [photoError, setPhotoError] = useState("");
   const [state, formAction, pending] = useActionState(createRoomListing, null);
+  const [advancing, setAdvancing] = useState(false);
   const fileInputRef = useRef(null);
+  const formRef = useRef(null);
 
   function syncPhotosToInput(nextPhotos) {
     if (!fileInputRef.current || typeof DataTransfer === "undefined") return;
@@ -160,14 +202,14 @@ export default function ListARoomPage() {
     );
 
     if (rawIncoming.length === 0 && (fileList?.length ?? 0) > 0) {
-      setStepError("Only image files are accepted.");
+      setPhotoError("Only image files are accepted.");
       syncPhotosToInput(photos);
       return;
     }
 
     const sizeValid = rawIncoming.filter((file) => file.size <= MAX_PHOTO_BYTES);
     if (sizeValid.length < rawIncoming.length) {
-      setStepError("Each photo must be 6MB or smaller.");
+      setPhotoError("Each photo must be 6MB or smaller.");
       syncPhotosToInput(photos);
       return;
     }
@@ -176,16 +218,17 @@ export default function ListARoomPage() {
     for (const file of sizeValid) {
       const result = await validateImageDimensions(file);
       if (!result.valid) {
-        setStepError(result.error);
+        setPhotoError(result.error);
         syncPhotosToInput(photos);
         return;
       }
       checkedFiles.push(file);
     }
 
-    setStepError("");
+    setPhotoError("");
     const remaining = 6 - photos.length;
     const accepted = checkedFiles.slice(0, remaining);
+    if (accepted.length > 0) setStepError("");
     const urls = await Promise.all(accepted.map((file) => fileToDataUrl(file)));
     setPhotos((current) => [...current, ...accepted]);
     setOriginals((current) => [...current, ...accepted]);
@@ -220,12 +263,15 @@ export default function ListARoomPage() {
       if (!values.suburb.trim()) {
         return "Suburb is required.";
       }
-      if (!Number(values.price_per_day) || Number(values.price_per_day) <= 0) {
-        return "Enter a daily rate greater than $0.";
-      }
+      const rateError = dailyRateError(values.price_per_day);
+      if (rateError) return rateError;
       if (values.available_days.length === 0) {
         return "Select at least one available day.";
       }
+      const otherError = customAmenityError(values.amenities_other, {
+        required: values.amenities.includes("other"),
+      });
+      if (otherError) return otherError;
       if (!values.description.trim() || values.description.trim().length < 30) {
         return "Description must be at least 30 characters long.";
       }
@@ -233,31 +279,82 @@ export default function ListARoomPage() {
         return "Description must be 1500 characters or fewer.";
       }
     }
+    if (currentStep === 3) {
+      if (photos.length === 0) {
+        return PHOTO_REQUIRED_ERROR;
+      }
+    }
     return "";
   }
 
-  function goNext() {
+  const requestedStep = parseStepParam(searchParams.get("step"));
+  const maxAllowedStep = validateStep(1)
+    ? 1
+    : validateStep(2)
+      ? 2
+      : TOTAL_STEPS;
+  const step = Math.min(requestedStep, maxAllowedStep);
+
+  useEffect(() => {
+    if (requestedStep === step) return;
+    router.replace(stepHref(pathname, step), { scroll: false });
+  }, [pathname, requestedStep, router, step]);
+
+  const prevStepRef = useRef(step);
+  useEffect(() => {
+    if (prevStepRef.current === step) return;
+    prevStepRef.current = step;
+    setStepError("");
+    scrollToTop();
+  }, [step]);
+
+  async function goNext() {
+    if (advancing || pending) return;
     const error = validateStep(step);
     if (error) {
       setStepError(error);
       return;
     }
     setStepError("");
-    setStep((current) => Math.min(3, current + 1));
-    scrollToTop();
+
+    if (step === 1 || step === 2) {
+      setAdvancing(true);
+      const leadData = new FormData();
+      leadData.set("practice_name", values.practice_name);
+      leadData.set("contact_email", values.contact_email);
+      leadData.set("phone", values.phone);
+      leadData.set("website_url", values.website_url);
+      leadData.set("last_step", String(Math.min(TOTAL_STEPS, step + 1)));
+      leadData.set("company", formRef.current?.elements?.company?.value ?? "");
+      try {
+        await captureListingLead(leadData);
+      } catch (leadError) {
+        console.error("captureListingLead:", leadError);
+      } finally {
+        setAdvancing(false);
+      }
+    }
+
+    router.push(stepHref(pathname, Math.min(TOTAL_STEPS, step + 1)), {
+      scroll: false,
+    });
   }
 
   function goBack() {
+    if (step <= 1) return;
     setStepError("");
-    setStep((current) => Math.max(1, current - 1));
-    scrollToTop();
+    router.back();
   }
 
   const actionError = actionErrorMessage(state);
+  const reviewAmenities = previewAmenityItems(
+    values.amenities,
+    values.amenities_other,
+  );
 
   return (
     <main className="min-h-screen bg-stone-50">
-      <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+      <FadeIn className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
         <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
           For clinic hosts
         </span>
@@ -291,6 +388,7 @@ export default function ListARoomPage() {
         </ol>
 
         <form
+          ref={formRef}
           action={formAction}
           noValidate
           onKeyDown={(e) => {
@@ -336,6 +434,9 @@ export default function ListARoomPage() {
                 className={inputClass}
                 placeholder="hello@clinic.com.au"
               />
+              <span className="mt-1 block text-xs text-stone-400">
+                We may follow up if you start a listing and don’t finish.
+              </span>
             </Field>
             <Field label="Phone number" required>
               <input
@@ -425,6 +526,7 @@ export default function ListARoomPage() {
                 <input
                   type="number"
                   min="1"
+                  max={MAX_PRICE_PER_DAY_DOLLARS}
                   step="1"
                   name="price_per_day"
                   value={values.price_per_day}
@@ -432,6 +534,9 @@ export default function ListARoomPage() {
                   className={inputClass}
                   placeholder="130"
                 />
+                <span className="mt-1 block text-xs text-stone-400">
+                  Whole dollars, up to $2,000 / day.
+                </span>
               </Field>
             </div>
             <div>
@@ -472,7 +577,7 @@ export default function ListARoomPage() {
                 {Object.entries(AMENITY_LABEL).map(([key, label]) => (
                   <label
                     key={key}
-                    className="flex cursor-pointer items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700"
+                    className="flex cursor-pointer items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 hover:border-stone-300"
                   >
                     <input
                       type="checkbox"
@@ -486,6 +591,48 @@ export default function ListARoomPage() {
                   </label>
                 ))}
               </div>
+
+              {values.amenities.includes("other") ? (
+                <div className="mt-3 space-y-1.5 rounded-xl border border-stone-200 bg-white p-3">
+                  <label
+                    htmlFor="amenities_other"
+                    className="flex items-baseline gap-1.5 text-xs font-semibold text-stone-600"
+                  >
+                    Specify custom amenity or equipment
+                    <span className="font-semibold text-teal-900">
+                      Required
+                    </span>
+                  </label>
+                  <input
+                    id="amenities_other"
+                    type="text"
+                    name="amenities_other"
+                    value={values.amenities_other}
+                    onChange={(e) => update("amenities_other", e.target.value)}
+                    className={inputClass}
+                    placeholder="e.g. Pilates reformer, Podiatry drill, Hydrotherapy bath"
+                    minLength={MIN_CUSTOM_AMENITY_CHARS}
+                    maxLength={MAX_CUSTOM_AMENITY_CHARS}
+                    required
+                  />
+                  <div className="flex items-center justify-between text-xs text-stone-400">
+                    <span>
+                      {MIN_CUSTOM_AMENITY_CHARS}–{MAX_CUSTOM_AMENITY_CHARS}{" "}
+                      characters.
+                    </span>
+                    <span
+                      className={
+                        values.amenities_other.length >
+                        MAX_CUSTOM_AMENITY_CHARS - 10
+                          ? "font-semibold text-amber-700"
+                          : ""
+                      }
+                    >
+                      {values.amenities_other.length}/{MAX_CUSTOM_AMENITY_CHARS}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
             </div>
             <Field label="Description" required>
               <textarea
@@ -525,7 +672,7 @@ export default function ListARoomPage() {
               }}
               onClick={() => fileInputRef.current?.click()}
               className={`block cursor-pointer rounded-2xl border border-dashed bg-white px-4 py-10 text-center transition-colors hover:border-teal-800 ${
-                stepError
+                photoError
                   ? "border-red-300"
                   : "border-stone-300"
               }`}
@@ -534,9 +681,8 @@ export default function ListARoomPage() {
                 Drag high-res photos here, or click to select files
               </p>
               <p className="mt-1 text-xs text-stone-500">
-                Up to 6 landscape photos. Minimum resolution:{" "}
-                <strong>800 × 500 px</strong> (6MB max). Optional — placeholders
-                are used if you skip this.
+                At least one photo is required. Up to 6 landscape photos.
+                Minimum resolution: <strong>800 × 500 px</strong> (6MB max).
               </p>
               <button
                 type="button"
@@ -559,7 +705,7 @@ export default function ListARoomPage() {
               />
             </div>
 
-            {step === 3 && stepError ? <FormError message={stepError} /> : null}
+            {step === 3 && photoError ? <FormError message={photoError} /> : null}
 
             {previewUrls.length > 0 && (
               <div className="space-y-3">
@@ -635,45 +781,110 @@ export default function ListARoomPage() {
               <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
                 Review listing
               </p>
+              <p className="mt-1 text-xs text-stone-500">
+                This is how the public listing will look.
+              </p>
 
-              {previewUrls.length > 0 ? (
-                <div className="mt-3 aspect-video w-full overflow-hidden rounded-xl border border-stone-200 bg-stone-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
+              <div className="mt-3 aspect-video w-full overflow-hidden rounded-xl border border-stone-200 bg-stone-100">
+                {previewUrls.length > 0 ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={previewUrls[0]}
                     alt="Hero preview"
                     className="h-full w-full object-cover object-center"
                   />
-                </div>
-              ) : null}
+                ) : (
+                  <RoomPlaceholder roomType={values.room_type} />
+                )}
+              </div>
 
+              <span className="mt-4 inline-block rounded-full bg-stone-200/70 px-3 py-1 text-xs font-semibold text-stone-700">
+                {ROOM_TYPE_LABEL[values.room_type]}
+              </span>
               <h2 className="mt-3 text-xl font-bold text-stone-900">
                 {values.title || "Untitled room"}
               </h2>
-              <p className="mt-1 text-sm text-stone-500">
-                {values.suburb || "Suburb"}, {values.state} · {values.practice_name || "Practice"}
+              <p className="mt-1 text-sm font-medium text-stone-500">
+                {values.suburb || "Suburb"}, {values.state} · Hosted by{" "}
+                {values.practice_name || "the clinic"}
               </p>
-              <p className="mt-3 text-lg font-bold text-stone-900">
-                {values.price_per_day
-                  ? pricePerDayLabel(Number(values.price_per_day) * 100)
-                  : "$— / day"}
-              </p>
-              <p className="mt-2 text-sm text-stone-600">
-                {ROOM_TYPE_LABEL[values.room_type]} ·{" "}
-                {values.available_days.map((d) => DAY_LABEL[d]).join(", ") || "No days selected"}
-              </p>
+
+              <div className="mt-5 border-t border-stone-200 pt-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
+                  Daily rate
+                </p>
+                <p className="mt-1 text-lg font-bold text-stone-900">
+                  {values.price_per_day
+                    ? pricePerDayLabel(Number(values.price_per_day) * 100)
+                    : "$— / day"}
+                </p>
+                <p className="text-xs text-stone-500">
+                  Sessional hire · No long-term lease
+                </p>
+              </div>
+
+              <div className="mt-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
+                  Available days
+                </p>
+                {values.available_days.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {values.available_days.map((d) => (
+                      <span
+                        key={d}
+                        className="rounded bg-stone-900 px-2 py-1 text-xs font-bold uppercase text-white"
+                      >
+                        {DAY_LABEL[d]}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-stone-500">No days selected</p>
+                )}
+              </div>
+
+              <div className="mt-4 border-t border-stone-200 pt-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
+                  Amenities & clinical specs
+                </p>
+                {reviewAmenities.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {reviewAmenities.map((item) => (
+                      <span
+                        key={item}
+                        className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-medium text-stone-700"
+                      >
+                        ✓ {amenityLabel(item)}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-stone-500">
+                    No amenities listed
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-4 border-t border-stone-200 pt-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
+                  About the space
+                </p>
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-stone-600">
+                  {values.description || "No description yet."}
+                </p>
+              </div>
             </div>
           </section>
 
-          {((step < 3 && stepError) || actionError) ? (
-            <FormError message={step < 3 ? stepError || actionError : actionError} />
+          {(stepError || actionError) ? (
+            <FormError message={stepError || actionError} />
           ) : null}
 
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={goBack}
-              disabled={step === 1 || pending}
+              disabled={step === 1 || pending || advancing}
               className="rounded-full cursor-pointer border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-700 disabled:opacity-40"
             >
               Back
@@ -684,9 +895,10 @@ export default function ListARoomPage() {
                 key="continue"
                 type="button"
                 onClick={goNext}
-                className="rounded-full cursor-pointer bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-950"
+                disabled={advancing || pending}
+                className="rounded-full cursor-pointer bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-950 disabled:opacity-60"
               >
-                Continue
+                {advancing ? "Saving…" : "Continue"}
               </button>
             ) : (
               <button
@@ -694,6 +906,12 @@ export default function ListARoomPage() {
                 type="button"
                 disabled={pending}
                 onClick={(event) => {
+                  const error = validateStep(3);
+                  if (error) {
+                    setStepError(error);
+                    return;
+                  }
+                  setStepError("");
                   event.currentTarget.form?.requestSubmit();
                 }}
                 className="rounded-full cursor-pointer bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-950 disabled:opacity-60"
@@ -703,7 +921,7 @@ export default function ListARoomPage() {
             )}
           </div>
         </form>
-      </div>
+      </FadeIn>
 
       {editingIndex != null && originals[editingIndex] ? (
         <PhotoCropModal

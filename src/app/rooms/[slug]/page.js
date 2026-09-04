@@ -1,7 +1,14 @@
 import { notFound } from "next/navigation";
-import { getRoomBySlug } from "@/lib/rooms";
-import { DAY_LABEL, ROOM_TYPE_LABEL, pricePerDayLabel } from "@/lib/format";
+import { getRoomBySlug } from "@/lib/db/rooms";
+import {
+  DAY_LABEL,
+  ROOM_TYPE_LABEL,
+  amenityLabel,
+  pricePerDayLabel,
+  visibleAmenities,
+} from "@/lib/format";
 import RoomGallery from "@/components/RoomGallery";
+import { FadeIn } from "@/components/FadeIn";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +32,7 @@ export default async function RoomDetailPage({ params }) {
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_360px]">
-        <div>
+        <FadeIn>
           <RoomGallery
             images={room.image_urls}
             title={room.title}
@@ -49,12 +56,12 @@ export default async function RoomDetailPage({ params }) {
               Amenities & Clinical Specs
             </h3>
             <div className="mt-4 flex flex-wrap gap-2">
-              {room.amenities.map((item) => (
+              {visibleAmenities(room.amenities).map((item) => (
                 <span
                   key={item}
                   className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-700"
                 >
-                  ✓ {item.replace(/_/g, " ")}
+                  ✓ {amenityLabel(item)}
                 </span>
               ))}
             </div>
@@ -68,9 +75,9 @@ export default async function RoomDetailPage({ params }) {
               {room.description}
             </p>
           </div>
-        </div>
+        </FadeIn>
 
-        <div className="lg:sticky lg:top-24 lg:h-fit">
+        <FadeIn delay={0.12} className="lg:sticky lg:top-24 lg:h-fit">
           <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-xl shadow-stone-900/5">
             <div className="border-b border-stone-100 pb-4">
               <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
@@ -107,7 +114,7 @@ export default async function RoomDetailPage({ params }) {
               Inquire with Clinic
             </a>
           </div>
-        </div>
+        </FadeIn>
       </div>
     </main>
   );

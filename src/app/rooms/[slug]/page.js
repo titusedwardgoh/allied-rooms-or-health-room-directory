@@ -10,8 +10,20 @@ import {
 } from "@/lib/format";
 import RoomGallery from "@/components/RoomGallery";
 import { FadeIn } from "@/components/FadeIn";
+import { publishListing } from "./actions";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const room = await getRoomBySlug(slug);
+  if (!room) return { title: "Room — AlliedRooms" };
+
+  return {
+    title: `${room.title} — AlliedRooms`,
+    robots: room.is_published ? undefined : { index: false, follow: false },
+  };
+}
 
 export default async function RoomDetailPage({ params }) {
   const { slug } = await params;
@@ -20,6 +32,7 @@ export default async function RoomDetailPage({ params }) {
   if (!room) notFound();
 
   const host = room.host ?? {};
+  const isDraft = room.is_published === false;
 
   const mailtoSubject = encodeURIComponent(
     `Inquiry — ${room.title} (${room.suburb}) via AlliedRooms`,
@@ -31,7 +44,36 @@ export default async function RoomDetailPage({ params }) {
   );
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <>
+      {isDraft ? (
+        <div className="sticky top-16 z-40 bg-amber-300 shadow-md shadow-stone-900/10">
+          <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+            <p className="text-base font-medium leading-snug text-stone-900 sm:text-lg">
+              <span className="font-extrabold">Draft Preview</span>
+              {" — "}
+              Your listing is not yet visible, click the button to publish.
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href={`/list-a-room?edit=${encodeURIComponent(room.slug)}`}
+                className="rounded-full border border-stone-900 bg-white px-4 py-2 text-sm font-semibold text-stone-900 hover:bg-stone-100"
+              >
+                Edit listing
+              </a>
+              <form action={publishListing}>
+                <input type="hidden" name="slug" value={room.slug} />
+                <button
+                  type="submit"
+                  className="rounded-full cursor-pointer bg-stone-900 px-4 py-2 text-sm font-semibold text-white hover:bg-stone-800"
+                >
+                  Publish listing
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      <main className="mx-auto max-w-6xl px-6 py-10 sm:px-8">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_360px]">
         <FadeIn>
           <RoomGallery
@@ -72,13 +114,13 @@ export default async function RoomDetailPage({ params }) {
             <h3 className="font-display text-lg font-semibold text-stone-900">
               About the Space
             </h3>
-            <p className="mt-3 leading-relaxed text-stone-600">
+            <p className="mt-3 min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed text-stone-600">
               {room.description}
             </p>
           </div>
         </FadeIn>
 
-        <FadeIn delay={0.12} className="lg:sticky lg:top-24 lg:h-fit">
+        <FadeIn delay={0.12} className={`lg:sticky lg:h-fit ${isDraft ? "lg:top-44" : "lg:top-24"}`}>
           <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-xl shadow-stone-900/5">
             <div className="border-b border-stone-100 pb-4">
               <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
@@ -118,5 +160,6 @@ export default async function RoomDetailPage({ params }) {
         </FadeIn>
       </div>
     </main>
+    </>
   );
 }

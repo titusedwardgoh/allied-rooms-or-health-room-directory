@@ -11,9 +11,15 @@ import {
 import {
   insertPublishedRoom,
   uniqueSlug,
+  updateRoomById,
   updateRoomImageUrls,
+  getRoomBySlug,
 } from "@/lib/db/rooms";
-import { deleteHostProfile, insertHostProfile } from "@/lib/db/profiles";
+import {
+  deleteHostProfile,
+  insertHostProfile,
+  updateHostProfile,
+} from "@/lib/db/profiles";
 import {
   markListingLeadComplete,
   upsertListingLead,
@@ -67,7 +73,7 @@ function photoContentType(file, ext) {
 
 async function uploadPhoto(admin, roomId, file, index) {
   const ext = photoExtension(file);
-  const path = `${roomId}/${index}.${ext}`;
+  const path = `${roomId}/${Date.now()}-${index}.${ext}`;
   const body =
     typeof file.arrayBuffer === "function"
       ? Buffer.from(await file.arrayBuffer())
@@ -148,8 +154,174 @@ export async function captureListingLead(formData) {
   }
 }
 
+function listingToFormValues(room) {
+  const amenities = room.amenities ?? [];
+  const custom =
+    amenities
+      .filter((item) => String(item).startsWith(CUSTOM_AMENITY_PREFIX))
+      .map((item) => String(item).slice(CUSTOM_AMENITY_PREFIX.length))[0] || "";
+  const keys = amenities.filter((item) => AMENITIES.includes(item));
+  if (custom && !keys.includes("other")) keys.push("other");
+  const host = room.host ?? {};
+
+  return {
+    slug: room.slug,
+    values: {
+      practice_name: host.practice_name || "",
+      contact_email: host.contact_email || "",
+      phone: host.phone || "",
+      website_url: host.website_url || "",
+      title: room.title || "",
+      address_line: room.address_line || "",
+      suburb: room.suburb || "",
+      state: room.state || "VIC",
+      room_type: room.room_type || "talk_therapy",
+      price_per_day: room.price_per_day_cents
+        ? String(Math.round(room.price_per_day_cents / 100))
+        : "",
+      available_days: room.available_days ?? [],
+      amenities: keys,
+      amenities_other: custom,
+      description: room.description || "",
+    },
+    imageUrls: room.image_urls ?? [],
+  };
+}
+
+export async function getListingForEdit(slug) {
+  const room = await getRoomBySlug(slug);
+  if (!room || room.is_published !== false) return null;
+  return listingToFormValues(room);
+}
+
+function parseListingForm(formData) {
+  const { practiceName, contactEmail, phoneRaw, websiteRaw } =
+    readPracticeFields(formData);
+  const practiceError = practiceDetailsError({
+    practiceName,
+    contactEmail,
+    phone: phoneRaw,
+    websiteUrl: websiteRaw,
+  });
+  if (practiceError) return { error: practiceError };
+
+  const phone = isAuPhone(phoneRaw) ? toAuPhoneDigits(phoneRaw) : null;
+  const websiteUrl =
+    websiteRaw && !/^https?:\/\/$/i.test(websiteRaw)
+      ? normalizeWebsiteUrl(websiteRaw)
+      : null;
+  const title = String(formData.get("title") ?? "").trim();
+  const addressLine = String(formData.get("address_line") ?? "").trim();
+  const suburb = String(formData.get("suburb") ?? "").trim();
+  const state = String(formData.get("state") ?? "VIC").trim();
+  const roomType = String(formData.get("room_type") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const dollars = Number(formData.get("price_per_day"));
+  const availableDays = formData
+    .getAll("available_days")
+    .map(String)
+    .filter((day) => DAYS.includes(day));
+  const amenities = formData
+    .getAll("amenities")
+    .map(String)
+    .filter((item) => AMENITIES.includes(item));
+  const customAmenity = normalizeCustomAmenity(formData.get("amenities_other"));
+  const otherError = customAmenityError(customAmenity, {
+    required: amenities.includes("other"),
+  });
+  if (otherError) return { error: otherError };
+  if (amenities.includes("other") && customAmenity) {
+    amenities.push(`${CUSTOM_AMENITY_PREFIX}${customAmenity}`);
+  }
+  const photos = collectPhotos(formData);
+  const imageSlots = formData.getAll("image_slots").map(String);
+
+  if (!title || title.length < 8) {
+    return { error: "Room title must be at least 8 characters long." };
+  }
+  const streetError = addressLineError(addressLine);
+  if (streetError) return { error: streetError };
+  if (!suburb) return { error: "Suburb is required." };
+  if (!description || description.length < MIN_DESCRIPTION_CHARS) {
+    return {
+      error: `Description must be at least ${MIN_DESCRIPTION_CHARS} characters.`,
+    };
+  }
+  if (description.length > MAX_DESCRIPTION_CHARS) {
+    return {
+      error: `Description must be ${MAX_DESCRIPTION_CHARS} characters or fewer.`,
+    };
+  }
+  if (!STATES.includes(state)) {
+    return { error: "Choose a valid Australian state." };
+  }
+  if (!ROOM_TYPES.includes(roomType)) {
+    return { error: "Choose a room type." };
+  }
+  const rateError = dailyRateError(dollars);
+  if (rateError) return { error: rateError };
+  if (availableDays.length === 0) {
+    return { error: "Select at least one available day." };
+  }
+  if (photos.some((file) => file.size > MAX_PHOTO_BYTES)) {
+    return { error: "Each photo must be 6MB or smaller." };
+  }
+
+  return {
+    practiceName,
+    contactEmail,
+    phone,
+    websiteUrl,
+    title,
+    addressLine,
+    suburb,
+    state,
+    roomType,
+    description,
+    dollars,
+    availableDays,
+    amenities,
+    photos,
+    imageSlots,
+  };
+}
+
+async function buildImageUrls(admin, roomId, photos, imageSlots) {
+  if (imageSlots.length > 0) {
+    const urls = [];
+    let fileIndex = 0;
+    for (const slot of imageSlots) {
+      if (slot === "__new__") {
+        const file = photos[fileIndex];
+        fileIndex += 1;
+        if (!file) continue;
+        try {
+          const url = await uploadPhoto(admin, roomId, file, fileIndex);
+          if (url) urls.push(url);
+        } catch (uploadError) {
+          console.error("listing photo:", uploadError?.message || uploadError);
+        }
+      } else if (slot) {
+        urls.push(slot);
+      }
+    }
+    return urls;
+  }
+
+  const urls = [];
+  for (let i = 0; i < photos.length; i += 1) {
+    try {
+      const url = await uploadPhoto(admin, roomId, photos[i], i);
+      if (url) urls.push(url);
+    } catch (uploadError) {
+      console.error("listing photo:", uploadError?.message || uploadError);
+    }
+  }
+  return urls;
+}
+
 export async function createRoomListing(prevState, formData) {
-  let publishedSlug = null;
+  let savedSlug = null;
 
   try {
     if (formData.get("company")) {
@@ -164,123 +336,43 @@ export async function createRoomListing(prevState, formData) {
       };
     }
 
-    const { practiceName, contactEmail, phoneRaw, websiteRaw } =
-      readPracticeFields(formData);
-    const practiceError = practiceDetailsError({
+    const parsed = parseListingForm(formData);
+    if (parsed.error) return { error: parsed.error };
+
+    const editSlug = String(formData.get("edit_slug") ?? "").trim();
+    const {
       practiceName,
       contactEmail,
-      phone: phoneRaw,
-      websiteUrl: websiteRaw,
-    });
-    if (practiceError) {
-      return { error: practiceError };
-    }
+      phone,
+      websiteUrl,
+      title,
+      addressLine,
+      suburb,
+      state,
+      roomType,
+      description,
+      dollars,
+      availableDays,
+      amenities,
+      photos,
+      imageSlots,
+    } = parsed;
 
-    const phone = isAuPhone(phoneRaw) ? toAuPhoneDigits(phoneRaw) : null;
-    const websiteUrl =
-      websiteRaw && !/^https?:\/\/$/i.test(websiteRaw)
-        ? normalizeWebsiteUrl(websiteRaw)
-        : null;
-    const title = String(formData.get("title") ?? "").trim();
-    const addressLine = String(formData.get("address_line") ?? "").trim();
-    const suburb = String(formData.get("suburb") ?? "").trim();
-    const state = String(formData.get("state") ?? "VIC").trim();
-    const roomType = String(formData.get("room_type") ?? "").trim();
-    const description = String(formData.get("description") ?? "").trim();
-    const dollars = Number(formData.get("price_per_day"));
-    const availableDays = formData
-      .getAll("available_days")
-      .map(String)
-      .filter((day) => DAYS.includes(day));
-    const amenities = formData
-      .getAll("amenities")
-      .map(String)
-      .filter((item) => AMENITIES.includes(item));
-    const customAmenity = normalizeCustomAmenity(
-      formData.get("amenities_other"),
-    );
-    const otherError = customAmenityError(customAmenity, {
-      required: amenities.includes("other"),
-    });
-    if (otherError) {
-      return { error: otherError };
-    }
-    if (amenities.includes("other") && customAmenity) {
-      amenities.push(`${CUSTOM_AMENITY_PREFIX}${customAmenity}`);
-    }
-    const photos = collectPhotos(formData);
-
-    if (!title || title.length < 8) {
-      return { error: "Room title must be at least 8 characters long." };
-    }
-    const streetError = addressLineError(addressLine);
-    if (streetError) {
-      return { error: streetError };
-    }
-    if (!suburb) {
-      return { error: "Suburb is required." };
-    }
-    if (!description || description.length < MIN_DESCRIPTION_CHARS) {
-      return {
-        error: `Description must be at least ${MIN_DESCRIPTION_CHARS} characters.`,
-      };
-    }
-    if (description.length > MAX_DESCRIPTION_CHARS) {
-      return {
-        error: `Description must be ${MAX_DESCRIPTION_CHARS} characters or fewer.`,
-      };
-    }
-    if (!STATES.includes(state)) {
-      return { error: "Choose a valid Australian state." };
-    }
-    if (!ROOM_TYPES.includes(roomType)) {
-      return { error: "Choose a room type." };
-    }
-    const rateError = dailyRateError(dollars);
-    if (rateError) {
-      return { error: rateError };
-    }
-    if (availableDays.length === 0) {
-      return { error: "Select at least one available day." };
-    }
-    if (photos.length === 0) {
+    const keptCount = imageSlots.filter((slot) => slot && slot !== "__new__").length;
+    const totalPhotos = imageSlots.length > 0 ? imageSlots.length : photos.length;
+    if (totalPhotos === 0) {
       return { error: "Upload at least one photo." };
     }
-    if (photos.length > MAX_PHOTOS) {
+    if (totalPhotos > MAX_PHOTOS) {
       return { error: `You can upload up to ${MAX_PHOTOS} photos.` };
     }
-    if (photos.some((file) => file.size > MAX_PHOTO_BYTES)) {
-      return { error: "Each photo must be 6MB or smaller." };
+    if (imageSlots.length === 0 && photos.length === 0) {
+      return { error: "Upload at least one photo." };
     }
 
-    const slugResult = await uniqueSlug(admin, title, suburb);
-    if (slugResult.error) {
-      console.error("createRoomListing slug:", slugResult.error);
-      return { error: "Could not reach the listings database. Check Supabase env vars on Vercel." };
-    }
-
-    const slug = slugResult.slug;
     const pricePerDayCents = Math.round(dollars * 100);
-
-    const { data: profile, error: profileError } = await insertHostProfile(
-      admin,
-      {
-        practice_name: practiceName,
-        contact_email: contactEmail,
-        phone,
-        website_url: websiteUrl,
-      },
-    );
-
-    if (profileError) {
-      console.error("createRoomListing profile:", profileError.message);
-      return { error: "Could not save clinic details. Please try again." };
-    }
-
-    const { data: room, error: roomError } = await insertPublishedRoom(admin, {
-      host_id: profile.id,
+    const roomFields = {
       title,
-      slug,
       address_line: addressLine,
       suburb,
       state,
@@ -288,56 +380,130 @@ export async function createRoomListing(prevState, formData) {
       room_type: roomType,
       available_days: availableDays,
       amenities,
-      image_urls: [],
       description,
-      is_published: true,
-    });
+    };
 
-    if (roomError) {
-      console.error("createRoomListing room:", roomError.message);
-      await deleteHostProfile(admin, profile.id);
-      return { error: "Could not publish the room. Please try again." };
-    }
-
-    const imageUrls = [];
-    for (let i = 0; i < photos.length; i += 1) {
-      try {
-        const url = await uploadPhoto(admin, room.id, photos[i], i);
-        if (url) imageUrls.push(url);
-      } catch (uploadError) {
-        console.error("createRoomListing photo:", uploadError?.message || uploadError);
+    if (editSlug) {
+      const existing = await getRoomBySlug(editSlug);
+      if (!existing || existing.is_published !== false) {
+        return { error: "This listing can no longer be edited." };
       }
-    }
 
-    if (imageUrls.length > 0) {
-      const { error: updateError } = await updateRoomImageUrls(
+      if (existing.host_id) {
+        const { error: profileError } = await updateHostProfile(
+          admin,
+          existing.host_id,
+          {
+            practice_name: practiceName,
+            contact_email: contactEmail,
+            phone,
+            website_url: websiteUrl,
+          },
+        );
+        if (profileError) {
+          console.error("createRoomListing profile update:", profileError.message);
+          return { error: "Could not save clinic details. Please try again." };
+        }
+      }
+
+      const imageUrls = await buildImageUrls(
         admin,
-        room.id,
-        imageUrls,
+        existing.id,
+        photos,
+        imageSlots,
+      );
+      if (imageUrls.length === 0 && keptCount === 0 && photos.length === 0) {
+        return { error: "Upload at least one photo." };
+      }
+
+      const { data: room, error: roomError } = await updateRoomById(
+        admin,
+        existing.id,
+        {
+          ...roomFields,
+          ...(imageUrls.length > 0 ? { image_urls: imageUrls } : {}),
+        },
+      );
+      if (roomError || !room) {
+        console.error("createRoomListing room update:", roomError?.message);
+        return { error: "Could not save the listing. Please try again." };
+      }
+
+      savedSlug = room.slug;
+    } else {
+      if (photos.length === 0) {
+        return { error: "Upload at least one photo." };
+      }
+
+      const slugResult = await uniqueSlug(admin, title, suburb);
+      if (slugResult.error) {
+        console.error("createRoomListing slug:", slugResult.error);
+        return {
+          error:
+            "Could not reach the listings database. Check Supabase env vars on Vercel.",
+        };
+      }
+
+      const { data: profile, error: profileError } = await insertHostProfile(
+        admin,
+        {
+          practice_name: practiceName,
+          contact_email: contactEmail,
+          phone,
+          website_url: websiteUrl,
+        },
       );
 
-      if (updateError) {
-        console.error("createRoomListing images:", updateError.message);
+      if (profileError) {
+        console.error("createRoomListing profile:", profileError.message);
+        return { error: "Could not save clinic details. Please try again." };
       }
-    }
 
-    const { error: leadError } = await markListingLeadComplete(
-      admin,
-      contactEmail,
-      practiceName,
-    );
-    if (leadError) {
-      console.error("createRoomListing lead:", leadError.message);
-    }
+      const { data: room, error: roomError } = await insertPublishedRoom(admin, {
+        host_id: profile.id,
+        slug: slugResult.slug,
+        image_urls: [],
+        is_published: false,
+        ...roomFields,
+      });
 
-    publishedSlug = room.slug;
+      if (roomError) {
+        console.error("createRoomListing room:", roomError.message);
+        await deleteHostProfile(admin, profile.id);
+        return { error: "Could not save the room. Please try again." };
+      }
+
+      const imageUrls = await buildImageUrls(admin, room.id, photos, []);
+      if (imageUrls.length > 0) {
+        const { error: updateError } = await updateRoomImageUrls(
+          admin,
+          room.id,
+          imageUrls,
+        );
+        if (updateError) {
+          console.error("createRoomListing images:", updateError.message);
+        }
+      }
+
+      const { error: leadError } = await markListingLeadComplete(
+        admin,
+        contactEmail,
+        practiceName,
+      );
+      if (leadError) {
+        console.error("createRoomListing lead:", leadError.message);
+      }
+
+      savedSlug = room.slug;
+    }
   } catch (error) {
     console.error("createRoomListing:", error?.message || error);
-    return { error: "Something went wrong while publishing. Please try again." };
+    return { error: "Something went wrong while saving the listing. Please try again." };
   }
 
   revalidatePath("/");
   revalidatePath("/rooms");
-  revalidatePath(`/rooms/${publishedSlug}`);
-  redirect(`/rooms/${publishedSlug}`);
+  revalidatePath(`/rooms/${savedSlug}`);
+  revalidatePath(`/list-a-room`);
+  redirect(`/rooms/${savedSlug}`);
 }

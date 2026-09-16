@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import Logo from "@/components/Logo";
 
 export default function SiteHeader() {
   const [entered, setEntered] = useState(false);
@@ -25,20 +26,8 @@ export default function SiteHeader() {
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       className="sticky top-0 z-50 border-b border-stone-200/80 bg-stone-50/80 backdrop-blur-md"
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="group flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-900 text-xs font-bold tracking-wider text-stone-50">
-            AR
-          </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-bold tracking-tight text-stone-900 transition-colors group-hover:text-stone-700">
-              AlliedRooms
-            </span>
-            <span className="-mt-1 text-[10px] font-medium text-stone-500">
-              Melbourne sessional spaces
-            </span>
-          </div>
-        </Link>
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-8">
+        <Logo priority />
 
         <nav className="flex items-center gap-6">
           <Link

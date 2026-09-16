@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import Logo from "@/components/Logo";
 import SiteHeader from "@/components/SiteHeader";
 import { FadeInOnView, MotionProvider } from "@/components/FadeIn";
 import "./globals.css";
@@ -15,7 +16,8 @@ export const metadata = {
   description:
     "Find a consulting room by suburb, day, and rate. Peer-to-peer directory for allied health and therapy rooms across Melbourne.",
   icons: {
-    icon: "/favicon.png",
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    apple: "/apple-icon",
   },
 };
 
@@ -27,9 +29,9 @@ export default function RootLayout({ children }) {
           <SiteHeader />
           {children}
           <footer className="border-t border-stone-200 bg-white">
-            <FadeInOnView className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-6">
+            <FadeInOnView className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-8">
               <div>
-                <p className="text-lg font-bold text-stone-900">AlliedRooms</p>
+                <Logo />
                 <p className="mt-1 text-stone-600">
                   Sessional rooms for allied health, listed with the day rate up
                   front.

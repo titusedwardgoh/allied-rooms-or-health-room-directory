@@ -21,7 +21,7 @@ export default async function RoomsPage({ searchParams }) {
 
   return (
     <main className="min-h-screen bg-stone-50">
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+      <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8">
         <FadeIn>
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
             Directory

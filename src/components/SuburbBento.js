@@ -35,9 +35,9 @@ export default function SuburbBento({ stats }) {
               }
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/5" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-transparent" />
 
-            <div className="relative z-10 flex h-full flex-col justify-between text-white">
+            <div className="relative z-10 flex h-full flex-col justify-between text-white [text-shadow:0_1px_8px_rgb(0_0_0_/_0.45)]">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300">
                   {item.tag}

@@ -13,7 +13,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-stone-50">
-      <section className="relative px-4 pb-12 pt-16 sm:px-6 sm:pt-24">
+      <section className="relative px-6 pb-12 pt-16 sm:px-8 sm:pt-24">
         <div className="mx-auto max-w-6xl text-center">
           <FadeIn>
             <span className="inline-block rounded-full bg-stone-200/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-stone-700">
@@ -41,7 +41,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <FadeInOnView className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+      <FadeInOnView className="mx-auto max-w-6xl px-6 py-12 sm:px-8">
         <div className="mb-6">
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
             Explore Locations
@@ -53,7 +53,7 @@ export default async function Home() {
         <SuburbBento stats={stats} />
       </FadeInOnView>
 
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+      <section className="mx-auto max-w-6xl px-6 py-12 sm:px-8">
         <FadeInOnView className="mb-6 flex items-end justify-between">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-stone-400">

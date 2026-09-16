@@ -16,7 +16,7 @@ import {
   pricePerDayLabel,
   visibleAmenities,
 } from "@/lib/format";
-import { captureListingLead, createRoomListing } from "./actions";
+import { captureListingLead, createRoomListing, getListingForEdit } from "./actions";
 import {
   addressLineError,
   MAX_PRICE_PER_DAY_DOLLARS,
@@ -28,6 +28,11 @@ import AddressAutocomplete from "@/components/AddressAutocomplete";
 import RoomPlaceholder from "@/components/RoomPlaceholder";
 import { fileToDataUrl, ensurePhotoFile } from "@/lib/cropImage";
 import { FadeIn } from "@/components/FadeIn";
+import {
+  LeaveListingModal,
+  listingHasProgress,
+  useLeaveListingGuard,
+} from "@/components/LeaveListingGuard";
 
 const STEPS = ["Practice", "Room", "Photos & review"];
 const TOTAL_STEPS = 3;
@@ -38,9 +43,12 @@ function parseStepParam(value) {
   return 1;
 }
 
-function stepHref(pathname, step) {
-  if (step <= 1) return pathname;
-  return `${pathname}?step=${step}`;
+function stepHref(pathname, step, editSlug = "") {
+  const params = new URLSearchParams();
+  if (step > 1) params.set("step", String(step));
+  if (editSlug) params.set("edit", editSlug);
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
 }
 
 const INITIAL = {
@@ -158,16 +166,22 @@ export default function ListARoomPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [values, setValues] = useState(INITIAL);
-  const [photos, setPhotos] = useState([]);
-  const [originals, setOriginals] = useState([]);
-  const [previewUrls, setPreviewUrls] = useState([]);
+  const [gallery, setGallery] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [stepError, setStepError] = useState("");
   const [photoError, setPhotoError] = useState("");
   const [state, formAction, pending] = useActionState(createRoomListing, null);
   const [advancing, setAdvancing] = useState(false);
+  const [editReady, setEditReady] = useState(!searchParams.get("edit"));
+  const [editMissing, setEditMissing] = useState(false);
   const fileInputRef = useRef(null);
   const formRef = useRef(null);
+  const allowLeaveRef = useRef(false);
+  const editSlug = searchParams.get("edit") || "";
+  const photos = gallery
+    .filter((item) => item.kind === "file")
+    .map((item) => item.file);
+  const previewUrls = gallery.map((item) => item.src);
 
   function syncPhotosToInput(nextPhotos) {
     if (!fileInputRef.current || typeof DataTransfer === "undefined") return;
@@ -182,6 +196,36 @@ export default function ListARoomPage() {
   useEffect(() => {
     syncPhotosToInput(photos);
   }, [photos]);
+
+  useEffect(() => {
+    if (!editSlug) {
+      setEditReady(true);
+      setEditMissing(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setEditReady(false);
+    setEditMissing(false);
+
+    getListingForEdit(editSlug).then((listing) => {
+      if (cancelled) return;
+      if (!listing) {
+        setEditMissing(true);
+        setEditReady(true);
+        return;
+      }
+      setValues(listing.values);
+      setGallery(
+        (listing.imageUrls || []).map((src) => ({ kind: "url", src })),
+      );
+      setEditReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [editSlug]);
 
   function update(name, value) {
     setValues((current) => ({ ...current, [name]: value }));
@@ -229,25 +273,27 @@ export default function ListARoomPage() {
     }
 
     setPhotoError("");
-    const remaining = 6 - photos.length;
+    const remaining = 6 - gallery.length;
     const accepted = checkedFiles.slice(0, remaining);
     if (accepted.length > 0) setStepError("");
     const urls = await Promise.all(accepted.map((file) => fileToDataUrl(file)));
-    setPhotos((current) => [...current, ...accepted]);
-    setOriginals((current) => [...current, ...accepted]);
-    setPreviewUrls((current) => [...current, ...urls]);
+    setGallery((current) => [
+      ...current,
+      ...accepted.map((file, index) => ({
+        kind: "file",
+        file,
+        original: file,
+        src: urls[index],
+      })),
+    ]);
   }
 
   function makeCoverPhoto(indexToPromote) {
-    setPhotos((current) => reorderPhotos(current, indexToPromote));
-    setOriginals((current) => reorderPhotos(current, indexToPromote));
-    setPreviewUrls((current) => reorderPhotos(current, indexToPromote));
+    setGallery((current) => reorderPhotos(current, indexToPromote));
   }
 
   function removePhoto(index) {
-    setPhotos((current) => current.filter((_, i) => i !== index));
-    setOriginals((current) => current.filter((_, i) => i !== index));
-    setPreviewUrls((current) => current.filter((_, i) => i !== index));
+    setGallery((current) => current.filter((_, i) => i !== index));
   }
 
   function validateStep(currentStep) {
@@ -285,7 +331,7 @@ export default function ListARoomPage() {
       }
     }
     if (currentStep === 3) {
-      if (photos.length === 0) {
+      if (gallery.length === 0) {
         return PHOTO_REQUIRED_ERROR;
       }
     }
@@ -302,8 +348,8 @@ export default function ListARoomPage() {
 
   useEffect(() => {
     if (requestedStep === step) return;
-    router.replace(stepHref(pathname, step), { scroll: false });
-  }, [pathname, requestedStep, router, step]);
+    router.replace(stepHref(pathname, step, editSlug), { scroll: false });
+  }, [editSlug, pathname, requestedStep, router, step]);
 
   const prevStepRef = useRef(step);
   useEffect(() => {
@@ -340,7 +386,7 @@ export default function ListARoomPage() {
       }
     }
 
-    router.push(stepHref(pathname, Math.min(TOTAL_STEPS, step + 1)), {
+    router.push(stepHref(pathname, Math.min(TOTAL_STEPS, step + 1), editSlug), {
       scroll: false,
     });
   }
@@ -356,6 +402,47 @@ export default function ListARoomPage() {
     values.amenities,
     values.amenities_other,
   );
+  const hasProgress = listingHasProgress(values, photos, step);
+
+  useEffect(() => {
+    if (pending) allowLeaveRef.current = true;
+  }, [pending]);
+
+  const leaveGuard = useLeaveListingGuard({
+    active: hasProgress && !pending && editReady,
+    allowLeaveRef,
+  });
+
+  if (!editReady) {
+    return (
+      <main className="min-h-screen bg-stone-50">
+        <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+          <p className="text-sm text-stone-500">Loading listing…</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (editMissing) {
+    return (
+      <main className="min-h-screen bg-stone-50">
+        <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+          <h1 className="font-sans text-3xl font-extrabold text-stone-900">
+            Listing not found
+          </h1>
+          <p className="mt-2 text-stone-600">
+            This draft may already be published, or the preview link is invalid.
+          </p>
+          <a
+            href="/list-a-room"
+            className="mt-6 inline-block rounded-full bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white"
+          >
+            List a Room
+          </a>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-stone-50">
@@ -364,10 +451,12 @@ export default function ListARoomPage() {
           For clinic hosts
         </span>
         <h1 className="mt-2 font-sans text-4xl font-extrabold text-stone-900">
-          List a Room
+          {editSlug ? "Edit listing" : "List a Room"}
         </h1>
         <p className="mt-2 text-stone-600">
-          Three short steps. The day rate is public as soon as you publish.
+          {editSlug
+            ? "Update the details, then save to return to your private preview."
+            : "Three short steps. You’ll get a private preview link before it appears in search."}
         </p>
 
         <ol className="mt-8 grid grid-cols-3 gap-2">
@@ -412,6 +501,17 @@ export default function ListARoomPage() {
             className="hidden"
             aria-hidden="true"
           />
+          {editSlug ? (
+            <input type="hidden" name="edit_slug" value={editSlug} />
+          ) : null}
+          {gallery.map((item, index) => (
+            <input
+              key={`slot-${item.src}-${index}`}
+              type="hidden"
+              name="image_slots"
+              value={item.kind === "url" ? item.src : "__new__"}
+            />
+          ))}
 
           <section className={step === 1 ? "space-y-4" : "hidden"}>
             <p className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-stone-500">
@@ -746,15 +846,15 @@ export default function ListARoomPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {previewUrls.map((url, index) => (
+                  {gallery.map((item, index) => (
                     <div
-                      key={`${photos[index]?.name || "photo"}-${index}`}
+                      key={`${item.kind}-${item.src}-${index}`}
                       className="group relative overflow-hidden rounded-xl border border-stone-200 bg-stone-100"
                     >
                       <div className="aspect-video w-full overflow-hidden bg-stone-900">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={url}
+                          src={item.src}
                           alt=""
                           className="h-full w-full object-cover object-center"
                         />
@@ -777,16 +877,18 @@ export default function ListARoomPage() {
                         </button>
                       )}
 
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingIndex(index);
-                        }}
-                        className="absolute bottom-2 left-2 cursor-pointer rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-stone-700 hover:bg-white"
-                      >
-                        Edit
-                      </button>
+                      {item.kind === "file" ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingIndex(index);
+                          }}
+                          className="absolute bottom-2 left-2 cursor-pointer rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-stone-700 hover:bg-white"
+                        >
+                          Edit
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         onClick={(e) => {
@@ -803,7 +905,7 @@ export default function ListARoomPage() {
               </div>
             )}
 
-            <div className="rounded-2xl border border-stone-200 bg-white p-5">
+            <div className="min-w-0 overflow-hidden rounded-2xl border border-stone-200 bg-white p-5">
               <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
                 Review listing
               </p>
@@ -897,7 +999,7 @@ export default function ListARoomPage() {
                 <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
                   About the space
                 </p>
-                <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-stone-600">
+                <p className="mt-2 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-stone-600">
                   {values.description || "No description yet."}
                 </p>
               </div>
@@ -944,37 +1046,46 @@ export default function ListARoomPage() {
                 }}
                 className="rounded-full cursor-pointer bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-950 disabled:opacity-60"
               >
-                {pending ? "Publishing…" : "Publish listing"}
+                {pending ? "Saving preview…" : editSlug ? "Save changes" : "Save preview"}
               </button>
             )}
           </div>
         </form>
       </FadeIn>
 
-      {editingIndex != null && originals[editingIndex] ? (
+      <LeaveListingModal
+        open={Boolean(leaveGuard.pendingHref)}
+        onStay={leaveGuard.stay}
+        onLeave={leaveGuard.leave}
+      />
+
+      {editingIndex != null && gallery[editingIndex]?.kind === "file" ? (
         <PhotoCropModal
-          file={originals[editingIndex]}
+          file={gallery[editingIndex].original || gallery[editingIndex].file}
           onClose={() => setEditingIndex(null)}
           onSave={(cropped) => {
+            const current = gallery[editingIndex];
             const nextFile = ensurePhotoFile(
               cropped instanceof File ? cropped : cropped?.file,
-              originals[editingIndex]?.name || "photo.jpg",
+              current?.file?.name || "photo.jpg",
             );
             const nextPreview =
               typeof cropped?.previewUrl === "string"
                 ? cropped.previewUrl
-                : previewUrls[editingIndex];
+                : current?.src;
             if (!nextFile) return;
-            setPhotos((current) =>
-              current.map((photo, i) => (i === editingIndex ? nextFile : photo)),
+            setGallery((items) =>
+              items.map((item, i) =>
+                i === editingIndex
+                  ? {
+                      kind: "file",
+                      file: nextFile,
+                      original: current.original || current.file,
+                      src: nextPreview,
+                    }
+                  : item,
+              ),
             );
-            if (nextPreview) {
-              setPreviewUrls((current) =>
-                current.map((url, i) =>
-                  i === editingIndex ? nextPreview : url,
-                ),
-              );
-            }
             setEditingIndex(null);
           }}
         />

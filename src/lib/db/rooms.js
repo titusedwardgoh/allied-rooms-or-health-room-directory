@@ -130,12 +130,7 @@ export async function getRoomBySlug(slug) {
   }
 
   let { data, error } = await queryRooms((supabase) =>
-    supabase
-      .from("rooms")
-      .select(roomSelect())
-      .eq("slug", slug)
-      .eq("is_published", true)
-      .maybeSingle(),
+    supabase.from("rooms").select(roomSelect()).eq("slug", slug).maybeSingle(),
   );
 
   if (error) {
@@ -144,7 +139,6 @@ export async function getRoomBySlug(slug) {
         .from("rooms")
         .select(roomSelectPlain())
         .eq("slug", slug)
-        .eq("is_published", true)
         .maybeSingle(),
     ));
   }
@@ -206,6 +200,19 @@ export async function insertPublishedRoom(admin, room) {
   return admin.from("rooms").insert(room).select("id, slug").single();
 }
 
+export async function updateRoomById(admin, roomId, fields) {
+  return admin.from("rooms").update(fields).eq("id", roomId).select("id, slug").single();
+}
+
 export async function updateRoomImageUrls(admin, roomId, imageUrls) {
   return admin.from("rooms").update({ image_urls: imageUrls }).eq("id", roomId);
+}
+
+export async function publishRoomBySlug(admin, slug) {
+  return admin
+    .from("rooms")
+    .update({ is_published: true })
+    .eq("slug", slug)
+    .select("id, slug")
+    .single();
 }

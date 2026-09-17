@@ -11,7 +11,11 @@ const SUBURB_IMAGES = {
 
 export default function SuburbBento({ stats }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div
+      role="region"
+      aria-label="Popular Melbourne hubs"
+      className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain scroll-pl-6 px-6 pb-1 touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:scroll-pl-0 sm:px-0 sm:pb-0 lg:grid-cols-4"
+    >
       {stats.map((item, idx) => {
         const isFeatured = idx === 0;
         const bgImage = SUBURB_IMAGES[item.suburb] || SUBURB_IMAGES.Richmond;
@@ -20,8 +24,8 @@ export default function SuburbBento({ stats }) {
           <Link
             key={item.suburb}
             href={`/rooms?suburb=${encodeURIComponent(item.suburb.toLowerCase())}`}
-            className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl ${
-              isFeatured ? "min-h-[260px] sm:col-span-2 sm:row-span-2" : "min-h-[180px]"
+            className={`group relative flex h-56 w-[78vw] shrink-0 snap-start flex-col justify-between overflow-hidden rounded-2xl p-6 transition-all duration-300 sm:h-auto sm:w-auto sm:hover:-translate-y-0.5 sm:hover:shadow-xl ${
+              isFeatured ? "sm:col-span-2 sm:row-span-2 sm:min-h-[260px]" : "sm:min-h-[180px]"
             }`}
           >
             <Image
@@ -30,8 +34,8 @@ export default function SuburbBento({ stats }) {
               fill
               sizes={
                 isFeatured
-                  ? "(min-width: 1024px) 50vw, 100vw"
-                  : "(min-width: 1024px) 25vw, 50vw"
+                  ? "(max-width: 639px) 78vw, (min-width: 1024px) 50vw, 100vw"
+                  : "(max-width: 639px) 78vw, (min-width: 1024px) 25vw, 50vw"
               }
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />

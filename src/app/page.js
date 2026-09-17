@@ -30,8 +30,7 @@ export default async function Home() {
 
           <FadeIn delay={0.16}>
             <p className="mx-auto mt-4 max-w-xl text-base text-stone-600 sm:text-lg">
-              Sessional clinical spaces across Melbourne. Clear daily rates
-              upfront—no brokers, no membership walls.
+            Book Professional Allied Health and Clinical Spaces across Melbourne with transparent daily rates and flexible terms.
             </p>
           </FadeIn>
 
@@ -54,7 +53,7 @@ export default async function Home() {
       </FadeInOnView>
 
       <section className="mx-auto max-w-6xl px-6 py-12 sm:px-8">
-        <FadeInOnView className="mb-6 flex items-end justify-between">
+        <FadeInOnView className="mb-6 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
               Directory Highlights

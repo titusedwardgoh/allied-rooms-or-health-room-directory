@@ -27,20 +27,22 @@ export default function SiteHeader() {
       className="sticky top-0 z-50 border-b border-stone-200/80 bg-stone-50/80 backdrop-blur-md"
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-8">
-        <Logo priority />
+        <Logo priority wordmarkClassName="hidden sm:inline" />
 
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/rooms"
-            className="text-sm font-medium text-stone-600 transition-colors hover:text-stone-900"
+            className="rounded-full border border-stone-900 bg-white px-4 py-2 text-xs font-semibold text-stone-900 transition-all hover:bg-stone-100 active:scale-95"
           >
-            Find a Room
+            <span className="sm:hidden">Find</span>
+            <span className="hidden sm:inline">Find a Room</span>
           </Link>
           <Link
             href="/list-a-room"
-            className="rounded-full bg-stone-900 px-4 py-2 text-xs font-semibold text-stone-50 shadow-sm transition-all hover:bg-stone-800 active:scale-95"
+            className="rounded-full border border-stone-900 bg-stone-900 px-4 py-2 text-xs font-semibold text-stone-50 shadow-sm transition-all hover:bg-stone-800 active:scale-95"
           >
-            List a Room
+            <span className="sm:hidden">List</span>
+            <span className="hidden sm:inline">List a Room</span>
           </Link>
         </nav>
       </div>

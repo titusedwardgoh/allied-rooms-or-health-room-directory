@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export default function Logo({ className = "h-9", priority = false }) {
+export default function Logo({ className = "h-9", priority = false, wordmarkClassName = "" }) {
   return (
     <Link
       href="/"
@@ -16,7 +16,7 @@ export default function Logo({ className = "h-9", priority = false }) {
         className={`${className} w-auto transition-transform group-hover:scale-105`}
         priority={priority}
       />
-      <span className="text-lg font-bold tracking-tight text-stone-900">
+      <span className={`text-lg font-bold tracking-tight text-stone-900 ${wordmarkClassName}`}>
         AlliedRooms
       </span>
     </Link>

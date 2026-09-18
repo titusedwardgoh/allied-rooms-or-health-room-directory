@@ -16,8 +16,10 @@ export const metadata = {
   description:
     "Find a consulting room by suburb, day, and rate. Peer-to-peer directory for allied health and therapy rooms across Melbourne.",
   icons: {
-    icon: [{ url: "/favicon.png", type: "image/png" }],
-    apple: "/apple-icon",
+    icon: [
+      { url: "/favicon.png?v=3", type: "image/png", sizes: "32x32" },
+    ],
+    apple: "/apple-icon.png",
   },
 };
 

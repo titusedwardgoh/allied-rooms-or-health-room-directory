@@ -34,7 +34,7 @@ export default async function Home() {
             </p>
           </FadeIn>
 
-          <FadeIn delay={0.24} className="mt-10">
+          <FadeIn delay={0.24} className="mt-16">
             <SearchBar />
           </FadeIn>
         </div>

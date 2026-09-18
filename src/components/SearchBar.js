@@ -56,7 +56,7 @@ function dividerClass(active) {
 
 function DayPicker({ selectedDays, onToggle }) {
   return (
-    <div className="flex items-center justify-between gap-1">
+    <div className="flex items-center gap-1">
       {Object.entries(DAY_INITIAL).map(([key, initial]) => {
         const selected = selectedDays.includes(key);
         return (
@@ -66,7 +66,7 @@ function DayPicker({ selectedDays, onToggle }) {
             aria-pressed={selected}
             aria-label={DAY_LABEL[key]}
             onClick={() => onToggle(key)}
-            className={`flex size-8 cursor-pointer items-center justify-center rounded-full text-xs font-bold transition-colors ${
+            className={`flex aspect-square min-w-0 flex-1 cursor-pointer items-center justify-center rounded-full text-sm font-bold transition-colors sm:max-w-8 sm:text-xs ${
               selected
                 ? "bg-stone-900 text-white"
                 : "bg-stone-100 text-stone-500 hover:bg-stone-200 hover:text-stone-700"

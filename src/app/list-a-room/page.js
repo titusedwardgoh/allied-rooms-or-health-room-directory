@@ -34,7 +34,7 @@ import {
   useLeaveListingGuard,
 } from "@/components/LeaveListingGuard";
 
-const STEPS = ["Practice", "Room", "Photos & review"];
+const STEPS = ["Practice", "Room", "Photos"];
 const TOTAL_STEPS = 3;
 
 function parseStepParam(value) {
@@ -68,24 +68,48 @@ const INITIAL = {
   description: "",
 };
 
+function FieldLabel({ label, required, optional }) {
+  return (
+    <span className="mb-2 flex flex-wrap items-center gap-2">
+      <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
+        {label}
+      </span>
+      {required ? (
+        <span className="rounded-full bg-teal-900/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-900">
+          Required
+        </span>
+      ) : null}
+      {optional ? (
+        <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+          Optional
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 function Field({ label, required, optional, children }) {
   return (
     <label className="block">
-      <span className="mb-1.5 flex items-baseline gap-1.5 text-xs font-bold uppercase tracking-wider text-stone-400">
-        {label}
-        {required ? (
-          <span className="font-semibold normal-case tracking-normal text-teal-900">
-            Required
-          </span>
-        ) : null}
-        {optional ? (
-          <span className="font-medium normal-case tracking-normal text-stone-400">
-            Optional
-          </span>
-        ) : null}
-      </span>
+      <FieldLabel label={label} required={required} optional={optional} />
       {children}
     </label>
+  );
+}
+
+function CardSection({ title, description, children }) {
+  return (
+    <section className="rounded-2xl border border-stone-200/80 bg-white p-6 shadow-sm shadow-stone-900/5">
+      {title ? (
+        <div className="mb-5">
+          <h2 className="text-base font-bold tracking-tight text-stone-900">{title}</h2>
+          {description ? (
+            <p className="mt-1 text-sm leading-relaxed text-stone-500">{description}</p>
+          ) : null}
+        </div>
+      ) : null}
+      <div className="space-y-5">{children}</div>
+    </section>
   );
 }
 
@@ -107,9 +131,16 @@ const MIN_PHOTO_HEIGHT = 500;
 const PHOTO_REQUIRED_ERROR = "Upload at least one photo.";
 
 const inputClass =
-  "w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm font-medium text-stone-900 placeholder-stone-400 outline-none focus:border-teal-800 focus:ring-2 focus:ring-teal-900/15";
+  "w-full rounded-xl border border-stone-200 bg-stone-50/50 px-3.5 py-2.5 text-sm font-medium text-stone-900 placeholder-stone-400 outline-none transition focus:border-teal-800 focus:bg-white focus:ring-2 focus:ring-teal-900/10";
 
 const selectClass = `${inputClass} cursor-pointer`;
+
+const choiceCardClass = (selected) =>
+  `cursor-pointer rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
+    selected
+      ? "border-teal-900 bg-teal-900/5 text-teal-950 shadow-sm"
+      : "border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:bg-stone-50"
+  }`;
 
 function actionErrorMessage(state) {
   if (!state || typeof state !== "object") return "";
@@ -169,6 +200,7 @@ export default function ListARoomPage() {
   const [gallery, setGallery] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [stepError, setStepError] = useState("");
+  const [stepBlockedMessage, setStepBlockedMessage] = useState("");
   const [photoError, setPhotoError] = useState("");
   const [state, formAction, pending] = useActionState(createRoomListing, null);
   const [advancing, setAdvancing] = useState(false);
@@ -397,6 +429,32 @@ export default function ListARoomPage() {
     router.back();
   }
 
+  function goToStep(target) {
+    if (target === step || target < 1 || target > TOTAL_STEPS) return;
+
+    for (let earlier = 1; earlier < target; earlier += 1) {
+      if (validateStep(earlier)) {
+        setStepBlockedMessage(
+          `Please complete the ${STEPS[earlier - 1]} details first.`,
+        );
+        return;
+      }
+    }
+
+    setStepError("");
+    setStepBlockedMessage("");
+    router.push(stepHref(pathname, target, editSlug), { scroll: false });
+  }
+
+  useEffect(() => {
+    if (!stepBlockedMessage) return undefined;
+    function onKeyDown(event) {
+      if (event.key === "Escape") setStepBlockedMessage("");
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [stepBlockedMessage]);
+
   const actionError = actionErrorMessage(state);
   const reviewAmenities = previewAmenityItems(
     values.amenities,
@@ -413,10 +471,12 @@ export default function ListARoomPage() {
     allowLeaveRef,
   });
 
+  const progressPct = Math.round((step / TOTAL_STEPS) * 100);
+
   if (!editReady) {
     return (
       <main className="min-h-screen bg-stone-50">
-        <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
           <p className="text-sm text-stone-500">Loading listing…</p>
         </div>
       </main>
@@ -426,7 +486,7 @@ export default function ListARoomPage() {
   if (editMissing) {
     return (
       <main className="min-h-screen bg-stone-50">
-        <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
           <h1 className="font-sans text-3xl font-extrabold text-stone-900">
             Listing not found
           </h1>
@@ -446,40 +506,57 @@ export default function ListARoomPage() {
 
   return (
     <main className="min-h-screen bg-stone-50">
-      <FadeIn className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+      <FadeIn className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
         <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
           For clinic hosts
         </span>
-        <h1 className="mt-2 font-sans text-4xl font-extrabold text-stone-900">
+        <h1 className="mt-2 font-sans text-4xl font-extrabold tracking-tight text-stone-900">
           {editSlug ? "Edit listing" : "List a Room"}
         </h1>
-        <p className="mt-2 text-stone-600">
+        <p className="mt-2 max-w-xl text-stone-600">
           {editSlug
             ? "Update the details, then save to return to your private preview."
             : "Three short steps. You’ll get a private preview link before it appears in search."}
         </p>
 
-        <ol className="mt-8 grid grid-cols-3 gap-2">
-          {STEPS.map((label, index) => {
-            const n = index + 1;
-            const active = step === n;
-            const done = step > n;
-            return (
-              <li
-                key={label}
-                className={`rounded-xl border px-3 py-2 text-center text-xs font-semibold ${
-                  active
-                    ? "border-teal-900 bg-teal-900 text-white"
-                    : done
-                      ? "border-stone-200 bg-white text-teal-900"
-                      : "border-stone-200 bg-white text-stone-400"
-                }`}
-              >
-                {n}. {label}
-              </li>
-            );
-          })}
-        </ol>
+        <div className="mt-10 scroll-mt-24">
+          <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-stone-400">
+            <span>
+              Step {step} of {TOTAL_STEPS}
+            </span>
+            <span>{progressPct}%</span>
+          </div>
+          <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-stone-200/80">
+            <div
+              className="h-full rounded-full bg-teal-900 transition-all duration-300"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {STEPS.map((label, index) => {
+              const n = index + 1;
+              const active = step === n;
+              const done = step > n;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => goToStep(n)}
+                  aria-current={active ? "step" : undefined}
+                  className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    active
+                      ? "bg-teal-900 text-white"
+                      : done
+                        ? "bg-teal-900/10 text-teal-900 hover:bg-teal-900/15"
+                        : "bg-stone-100 text-stone-400 hover:bg-stone-200/80 hover:text-stone-500"
+                  }`}
+                >
+                  {n}. {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <form
           ref={formRef}
@@ -491,7 +568,7 @@ export default function ListARoomPage() {
               goNext();
             }
           }}
-          className="mt-8 space-y-6"
+          className="mt-10 space-y-8"
         >
           <input
             type="text"
@@ -513,141 +590,180 @@ export default function ListARoomPage() {
             />
           ))}
 
-          <section className={step === 1 ? "space-y-4" : "hidden"}>
-            <p className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-stone-500">
-              Practice name, email, and phone are shown on the listing page so
-              practitioners can enquire directly.
-            </p>
-            <Field label="Practice name" required>
-              <input
-                name="practice_name"
-                value={values.practice_name}
-                onChange={(e) => update("practice_name", e.target.value)}
-                className={inputClass}
-                placeholder="Richmond Wellness Collective"
-              />
-              <span className="mt-1 block text-xs text-stone-400">
-                At least 4 characters.
-              </span>
-            </Field>
-            <Field label="Contact email" required>
-              <input
-                type="email"
-                name="contact_email"
-                value={values.contact_email}
-                onChange={(e) => update("contact_email", e.target.value)}
-                className={inputClass}
-                placeholder="hello@clinic.com.au"
-              />
-              <span className="mt-1 block text-xs text-stone-400">
-                We may follow up if you start a listing and don’t finish.
-              </span>
-            </Field>
-            <Field label="Phone number" required>
-              <input
-                name="phone"
-                inputMode="tel"
-                autoComplete="tel"
-                value={values.phone}
-                onChange={(e) => update("phone", e.target.value)}
-                className={inputClass}
-                placeholder="03 9000 0000"
-              />
-              <span className="mt-1 block text-xs text-stone-400">
-                10 digits, starting with 02, 03, 04, 07 or 08.
-              </span>
-            </Field>
-            <Field label="Website" optional>
-              <input
-                name="website_url"
-                inputMode="url"
-                autoComplete="url"
-                value={values.website_url}
-                onChange={(e) => update("website_url", e.target.value)}
-                className={inputClass}
-                placeholder="https://clinic.com.au"
-              />
-              <span className="mt-1 block text-xs text-stone-400">
-                Leave blank if you do not have a website.
-              </span>
-            </Field>
-          </section>
-
-          <section className={step === 2 ? "space-y-4" : "hidden"}>
-            <Field label="Room title" required>
-              <input
-                name="title"
-                value={values.title}
-                onChange={(e) => update("title", e.target.value)}
-                className={inputClass}
-                placeholder="Acoustic psychotherapy suite"
-                minLength={8}
-              />
-              <span className="mt-1 block text-xs text-stone-400">
-                At least 8 characters ({values.title.length}/8).
-              </span>
-            </Field>
-            <Field label="Address" required>
-              <AddressAutocomplete
-                name="address_line"
-                value={values.address_line}
-                onChange={(address) => update("address_line", address)}
-                onResolved={({ addressLine, suburb, state }) => {
-                  setValues((current) => ({
-                    ...current,
-                    address_line: addressLine || current.address_line,
-                    suburb: suburb || current.suburb,
-                    state: AU_STATES.includes(state) ? state : current.state,
-                  }));
-                }}
-                className={inputClass}
-                placeholder="12 Bridge Road"
-              />
-              <span className="mt-1 block text-xs text-stone-400">
-                Start typing an Australian address and pick a suggestion, or type
-                it yourself.
-              </span>
-            </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Suburb" required>
+          <div className={step === 1 ? "space-y-6" : "hidden"}>
+            <CardSection
+              title="Practice details"
+              description="How practitioners can reach you about this listing."
+            >
+              <Field label="Practice name" required>
                 <input
-                  name="suburb"
-                  value={values.suburb}
-                  onChange={(e) => update("suburb", e.target.value)}
+                  name="practice_name"
+                  value={values.practice_name}
+                  onChange={(e) => update("practice_name", e.target.value)}
                   className={inputClass}
-                  placeholder="Richmond"
+                  placeholder="Richmond Wellness Collective"
                 />
+                <span className="mt-1.5 block text-xs text-stone-400">
+                  At least 4 characters.
+                </span>
               </Field>
-              <Field label="State">
-                <select
-                  name="state"
-                  value={values.state}
-                  onChange={(e) => update("state", e.target.value)}
-                  className={selectClass}
-                >
-                  {AU_STATES.map((state) => (
-                    <option key={state} value={state}>
-                      {state}
-                    </option>
-                  ))}
-                </select>
+              <Field label="Contact email" required>
+                <input
+                  type="email"
+                  name="contact_email"
+                  value={values.contact_email}
+                  onChange={(e) => update("contact_email", e.target.value)}
+                  className={inputClass}
+                  placeholder="hello@clinic.com.au"
+                />
+                <span className="mt-1.5 block text-xs text-stone-400">
+                  We may follow up if you start a listing and don’t finish.
+                </span>
               </Field>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Room type">
-                <select
-                  name="room_type"
-                  value={values.room_type}
-                  onChange={(e) => update("room_type", e.target.value)}
-                  className={selectClass}
-                >
-                  {Object.entries(ROOM_TYPE_LABEL).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+              <Field label="Phone number" required>
+                <input
+                  name="phone"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={values.phone}
+                  onChange={(e) => update("phone", e.target.value)}
+                  className={inputClass}
+                  placeholder="03 9000 0000"
+                />
+                <span className="mt-1.5 block text-xs text-stone-400">
+                  10 digits, starting with 02, 03, 04, 07 or 08.
+                </span>
               </Field>
+              <Field label="Website" optional>
+                <input
+                  name="website_url"
+                  inputMode="url"
+                  autoComplete="url"
+                  value={values.website_url}
+                  onChange={(e) => update("website_url", e.target.value)}
+                  className={inputClass}
+                  placeholder="https://clinic.com.au"
+                />
+                <span className="mt-1.5 block text-xs text-stone-400">
+                  Leave blank if you do not have a website.
+                </span>
+              </Field>
+            </CardSection>
+          </div>
+
+          <div className={step === 2 ? "space-y-6" : "hidden"}>
+            <input type="hidden" name="room_type" value={values.room_type} />
+            {values.available_days.map((day) => (
+              <input
+                key={`day-${day}`}
+                type="hidden"
+                name="available_days"
+                value={day}
+              />
+            ))}
+            {values.amenities.map((item) => (
+              <input
+                key={`amenity-${item}`}
+                type="hidden"
+                name="amenities"
+                value={item}
+              />
+            ))}
+
+            <CardSection
+              title="Space basics"
+              description="Give practitioners a clear first impression of the room."
+            >
+              <Field label="Room title" required>
+                <input
+                  name="title"
+                  value={values.title}
+                  onChange={(e) => update("title", e.target.value)}
+                  className={inputClass}
+                  placeholder="Acoustic psychotherapy suite"
+                  minLength={8}
+                />
+                <span className="mt-1.5 block text-xs text-stone-400">
+                  At least 8 characters ({values.title.length}/8).
+                </span>
+              </Field>
+              <div>
+                <FieldLabel label="Room type" />
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {Object.entries(ROOM_TYPE_LABEL).map(([key, label]) => {
+                    const selected = values.room_type === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => update("room_type", key)}
+                        aria-pressed={selected}
+                        className={choiceCardClass(selected)}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </CardSection>
+
+            <CardSection
+              title="Location"
+              description="Help practitioners find the clinic in search."
+            >
+              <Field label="Address" required>
+                <AddressAutocomplete
+                  name="address_line"
+                  value={values.address_line}
+                  onChange={(address) => update("address_line", address)}
+                  onResolved={({ addressLine, suburb, state }) => {
+                    setValues((current) => ({
+                      ...current,
+                      address_line: addressLine || current.address_line,
+                      suburb: suburb || current.suburb,
+                      state: AU_STATES.includes(state) ? state : current.state,
+                    }));
+                  }}
+                  className={inputClass}
+                  placeholder="12 Bridge Road"
+                />
+                <span className="mt-1.5 block text-xs text-stone-400">
+                  Start typing an Australian address and pick a suggestion, or
+                  type it yourself.
+                </span>
+              </Field>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="Suburb" required>
+                  <input
+                    name="suburb"
+                    value={values.suburb}
+                    onChange={(e) => update("suburb", e.target.value)}
+                    className={inputClass}
+                    placeholder="Richmond"
+                  />
+                </Field>
+                <Field label="State">
+                  <select
+                    name="state"
+                    value={values.state}
+                    onChange={(e) => update("state", e.target.value)}
+                    className={selectClass}
+                  >
+                    {AU_STATES.map((state) => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+            </CardSection>
+
+            <CardSection
+              title="Sessional rate & availability"
+              description="Daily hire rate and the days this room can be booked."
+            >
               <Field label="Daily rate (AUD)" required>
                 <input
                   type="number"
@@ -660,75 +776,61 @@ export default function ListARoomPage() {
                   className={inputClass}
                   placeholder="130"
                 />
-                <span className="mt-1 block text-xs text-stone-400">
+                <span className="mt-1.5 block text-xs text-stone-400">
                   Whole dollars, up to $2,000 / day.
                 </span>
               </Field>
-            </div>
-            <div>
-              <p className="mb-2 flex items-baseline gap-1.5 text-xs font-bold uppercase tracking-wider text-stone-400">
-                Available days
-                <span className="font-semibold normal-case tracking-normal text-teal-900">
-                  Required
-                </span>
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(DAY_LABEL).map(([key, label]) => (
-                  <label
-                    key={key}
-                    className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                      values.available_days.includes(key)
-                        ? "border-stone-900 bg-stone-900 text-white"
-                        : "border-stone-200 bg-white text-stone-600"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      name="available_days"
-                      value={key}
-                      checked={values.available_days.includes(key)}
-                      onChange={() => toggleList("available_days", key)}
-                      className="sr-only"
-                    />
-                    {label}
-                  </label>
-                ))}
+              <div>
+                <FieldLabel label="Available days" required />
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(DAY_LABEL).map(([key, label]) => {
+                    const selected = values.available_days.includes(key);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => toggleList("available_days", key)}
+                        aria-pressed={selected}
+                        className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                          selected
+                            ? "border-teal-900 bg-teal-900 text-white"
+                            : "border-stone-200 bg-stone-50/50 text-stone-600 hover:border-stone-300 hover:bg-white"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-            <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-stone-400">
-                Amenities
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {Object.entries(AMENITY_LABEL).map(([key, label]) => (
-                  <label
-                    key={key}
-                    className="flex cursor-pointer items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 hover:border-stone-300"
-                  >
-                    <input
-                      type="checkbox"
-                      name="amenities"
-                      value={key}
-                      checked={values.amenities.includes(key)}
-                      onChange={() => toggleList("amenities", key)}
-                      className="accent-teal-900"
-                    />
-                    {label}
-                  </label>
-                ))}
+            </CardSection>
+
+            <CardSection
+              title="Features & description"
+              description="Amenities and a short write-up of how the space feels to work in."
+            >
+              <div>
+                <FieldLabel label="Amenities" optional />
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {Object.entries(AMENITY_LABEL).map(([key, label]) => {
+                    const selected = values.amenities.includes(key);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => toggleList("amenities", key)}
+                        aria-pressed={selected}
+                        className={choiceCardClass(selected)}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {values.amenities.includes("other") ? (
-                <div className="mt-3 space-y-1.5 rounded-xl border border-stone-200 bg-white p-3">
-                  <label
-                    htmlFor="amenities_other"
-                    className="flex items-baseline gap-1.5 text-xs font-semibold text-stone-600"
-                  >
-                    Specify custom amenity or equipment
-                    <span className="font-semibold text-teal-900">
-                      Required
-                    </span>
-                  </label>
+                <Field label="Custom amenity" required>
                   <input
                     id="amenities_other"
                     type="text"
@@ -741,7 +843,7 @@ export default function ListARoomPage() {
                     maxLength={MAX_CUSTOM_AMENITY_CHARS}
                     required
                   />
-                  <div className="flex items-center justify-between text-xs text-stone-400">
+                  <div className="mt-1.5 flex items-center justify-between text-xs text-stone-400">
                     <span>
                       {MIN_CUSTOM_AMENITY_CHARS}–{MAX_CUSTOM_AMENITY_CHARS}{" "}
                       characters.
@@ -757,39 +859,44 @@ export default function ListARoomPage() {
                       {values.amenities_other.length}/{MAX_CUSTOM_AMENITY_CHARS}
                     </span>
                   </div>
-                </div>
+                </Field>
               ) : null}
-            </div>
-            <Field label="Description" required>
-              <textarea
-                name="description"
-                rows={4}
-                value={values.description}
-                onChange={(e) => update("description", e.target.value)}
-                className={inputClass}
-                placeholder="Natural light, acoustic treatment, shared waiting room, practitioner kitchenette..."
-                minLength={30}
-                maxLength={1500}
-              />
-              <div className="mt-1 flex items-center justify-between text-xs text-stone-400">
-                <span>
-                  Describe light, acoustic treatment, parking, and shared
-                  amenities.
-                </span>
-                <span
-                  className={
-                    values.description.length > 1400
-                      ? "font-semibold text-amber-700"
-                      : ""
-                  }
-                >
-                  {values.description.length}/1500
-                </span>
-              </div>
-            </Field>
-          </section>
 
-          <section className={step === 3 ? "space-y-5" : "hidden"}>
+              <Field label="Description" required>
+                <textarea
+                  name="description"
+                  rows={5}
+                  value={values.description}
+                  onChange={(e) => update("description", e.target.value)}
+                  className={`${inputClass} resize-y`}
+                  placeholder="Natural light, acoustic treatment, shared waiting room, practitioner kitchenette..."
+                  minLength={30}
+                  maxLength={1500}
+                />
+                <div className="mt-1.5 flex items-center justify-between gap-3 text-xs text-stone-400">
+                  <span>
+                    Describe light, acoustic treatment, parking, and shared
+                    amenities.
+                  </span>
+                  <span
+                    className={
+                      values.description.length > 1400
+                        ? "font-semibold text-amber-700"
+                        : ""
+                    }
+                  >
+                    {values.description.length}/1500
+                  </span>
+                </div>
+              </Field>
+            </CardSection>
+          </div>
+
+          <div className={step === 3 ? "space-y-6" : "hidden"}>
+            <CardSection
+              title="Photos"
+              description="At least one landscape photo is required. First image becomes the listing cover."
+            >
             <div
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
@@ -797,7 +904,7 @@ export default function ListARoomPage() {
                 addFiles(e.dataTransfer.files);
               }}
               onClick={() => fileInputRef.current?.click()}
-              className={`block cursor-pointer rounded-2xl border border-dashed bg-white px-4 py-10 text-center transition-colors hover:border-teal-800 ${
+              className={`block cursor-pointer rounded-2xl border border-dashed bg-stone-50/50 px-4 py-10 text-center transition-colors hover:border-teal-800 hover:bg-white ${
                 photoError
                   ? "border-red-300"
                   : "border-stone-300"
@@ -904,16 +1011,14 @@ export default function ListARoomPage() {
                 </div>
               </div>
             )}
+            </CardSection>
 
-            <div className="min-w-0 overflow-hidden rounded-2xl border border-stone-200 bg-white p-5">
-              <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
-                Review listing
-              </p>
-              <p className="mt-1 text-xs text-stone-500">
-                This is how the public listing will look.
-              </p>
-
-              <div className="mt-3 aspect-video w-full overflow-hidden rounded-xl border border-stone-200 bg-stone-100">
+            <CardSection
+              title="Review listing"
+              description="This is how the public listing will look."
+            >
+              <div className="min-w-0">
+              <div className="aspect-video w-full overflow-hidden rounded-xl border border-stone-200 bg-stone-100">
                 {previewUrls.length > 0 ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -1003,19 +1108,20 @@ export default function ListARoomPage() {
                   {values.description || "No description yet."}
                 </p>
               </div>
-            </div>
-          </section>
+              </div>
+            </CardSection>
+          </div>
 
           {(stepError || actionError) ? (
             <FormError message={stepError || actionError} />
           ) : null}
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5">
             <button
               type="button"
               onClick={goBack}
               disabled={step === 1 || pending || advancing}
-              className="rounded-full cursor-pointer border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-700 disabled:opacity-40"
+              className="rounded-full cursor-pointer border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-40"
             >
               Back
             </button>
@@ -1058,6 +1164,40 @@ export default function ListARoomPage() {
         onStay={leaveGuard.stay}
         onLeave={leaveGuard.leave}
       />
+
+      {stepBlockedMessage ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-stone-900/40 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="step-blocked-title"
+          onClick={() => setStepBlockedMessage("")}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-6 shadow-xl shadow-stone-900/10"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2
+              id="step-blocked-title"
+              className="font-sans text-xl font-bold text-stone-900"
+            >
+              Finish this step first
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-stone-600">
+              {stepBlockedMessage}
+            </p>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setStepBlockedMessage("")}
+                className="cursor-pointer rounded-full bg-stone-900 px-4 py-2 text-sm font-semibold text-white hover:bg-stone-800"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {editingIndex != null && gallery[editingIndex]?.kind === "file" ? (
         <PhotoCropModal

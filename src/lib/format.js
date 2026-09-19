@@ -47,6 +47,7 @@ export const AMENITY_LABEL = {
 };
 
 export const CUSTOM_AMENITY_PREFIX = "Custom: ";
+export const CUSTOM_ROOM_TYPE_PREFIX = "Room type: ";
 export const MIN_CUSTOM_AMENITY_CHARS = 5;
 export const MAX_CUSTOM_AMENITY_CHARS = 50;
 
@@ -56,22 +57,77 @@ export function normalizeCustomAmenity(value) {
     .trim();
 }
 
-export function customAmenityError(value, { required = false } = {}) {
+export function customAmenityError(
+  value,
+  {
+    required = false,
+    noun = "Custom amenity",
+    emptyMessage = "Describe the custom amenity or equipment.",
+  } = {},
+) {
   const text = normalizeCustomAmenity(value);
   if (!text) {
-    return required ? "Describe the custom amenity or equipment." : "";
+    return required ? emptyMessage : "";
   }
   if (text.length < MIN_CUSTOM_AMENITY_CHARS) {
-    return `Custom amenity must be at least ${MIN_CUSTOM_AMENITY_CHARS} characters.`;
+    return `${noun} must be at least ${MIN_CUSTOM_AMENITY_CHARS} characters.`;
   }
   if (text.length > MAX_CUSTOM_AMENITY_CHARS) {
-    return `Custom amenity must be ${MAX_CUSTOM_AMENITY_CHARS} characters or fewer.`;
+    return `${noun} must be ${MAX_CUSTOM_AMENITY_CHARS} characters or fewer.`;
   }
   const letterCount = (text.match(/\p{L}/gu) || []).length;
   if (letterCount < MIN_CUSTOM_AMENITY_CHARS) {
-    return "Custom amenity must have a valid entry.";
+    return `${noun} must have a valid entry.`;
   }
   return "";
+}
+
+export function customRoomTypeError(value, { required = false } = {}) {
+  return customAmenityError(value, {
+    required,
+    noun: "Custom room type",
+    emptyMessage: "Describe the custom room type.",
+  });
+}
+
+export function customRoomTypeFromAmenities(amenities) {
+  const list = Array.isArray(amenities) ? amenities : [];
+  const item = list.find((entry) =>
+    String(entry).startsWith(CUSTOM_ROOM_TYPE_PREFIX),
+  );
+  return item ? String(item).slice(CUSTOM_ROOM_TYPE_PREFIX.length) : "";
+}
+
+export function roomTypeLabel(value, custom = "") {
+  const text = normalizeCustomAmenity(custom);
+  if (String(value ?? "") === "other" && text) return text;
+  return ROOM_TYPE_LABEL[value] || text || "Other";
+}
+
+export function listingRoomTypeLabel(room) {
+  return roomTypeLabel(
+    room?.room_type,
+    room?.room_type_other || customRoomTypeFromAmenities(room?.amenities),
+  );
+}
+
+export function parseStoredRoomType(room) {
+  const raw = String(room?.room_type ?? "").trim();
+  const custom =
+    normalizeCustomAmenity(room?.room_type_other) ||
+    customRoomTypeFromAmenities(room?.amenities);
+  if (raw === "other") {
+    return { room_type: "other", room_type_other: custom };
+  }
+  if (ROOM_TYPE_LABEL[raw]) {
+    return { room_type: raw, room_type_other: "" };
+  }
+  return { room_type: "talk_therapy", room_type_other: "" };
+}
+
+export function matchesRoomTypeFilter(roomType, type) {
+  if (!type) return true;
+  return roomType === type;
 }
 
 export function amenityLabel(item) {
@@ -87,7 +143,11 @@ export function visibleAmenities(items) {
   const hasCustom = list.some((item) =>
     String(item).startsWith(CUSTOM_AMENITY_PREFIX),
   );
-  return list.filter((item) => !(item === "other" && hasCustom));
+  return list.filter((item) => {
+    if (String(item).startsWith(CUSTOM_ROOM_TYPE_PREFIX)) return false;
+    if (item === "other" && hasCustom) return false;
+    return true;
+  });
 }
 
 export function slugify(text) {

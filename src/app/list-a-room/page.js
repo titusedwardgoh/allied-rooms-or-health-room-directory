@@ -12,8 +12,10 @@ import {
   ROOM_TYPE_LABEL,
   amenityLabel,
   customAmenityError,
+  customRoomTypeError,
   normalizeCustomAmenity,
   pricePerDayLabel,
+  roomTypeLabel,
   visibleAmenities,
 } from "@/lib/format";
 import { captureListingLead, createRoomListing, getListingForEdit } from "./actions";
@@ -61,6 +63,7 @@ const INITIAL = {
   suburb: "",
   state: "VIC",
   room_type: "talk_therapy",
+  room_type_other: "",
   price_per_day: "",
   available_days: [],
   amenities: [],
@@ -351,6 +354,10 @@ export default function ListARoomPage() {
       if (values.available_days.length === 0) {
         return "Select at least one available day.";
       }
+      const roomTypeError = customRoomTypeError(values.room_type_other, {
+        required: values.room_type === "other",
+      });
+      if (roomTypeError) return roomTypeError;
       const otherError = customAmenityError(values.amenities_other, {
         required: values.amenities.includes("other"),
       });
@@ -705,6 +712,40 @@ export default function ListARoomPage() {
                     );
                   })}
                 </div>
+                {values.room_type === "other" ? (
+                  <div className="mt-5">
+                    <Field label="Custom room type" required>
+                      <input
+                        id="room_type_other"
+                        type="text"
+                        name="room_type_other"
+                        value={values.room_type_other}
+                        onChange={(e) => update("room_type_other", e.target.value)}
+                        className={inputClass}
+                        placeholder="e.g. Hydrotherapy suite, Group workshop space"
+                        minLength={MIN_CUSTOM_AMENITY_CHARS}
+                        maxLength={MAX_CUSTOM_AMENITY_CHARS}
+                        required
+                      />
+                      <div className="mt-1.5 flex items-center justify-between text-xs text-stone-400">
+                        <span>
+                          {MIN_CUSTOM_AMENITY_CHARS}–{MAX_CUSTOM_AMENITY_CHARS}{" "}
+                          characters.
+                        </span>
+                        <span
+                          className={
+                            values.room_type_other.length >
+                            MAX_CUSTOM_AMENITY_CHARS - 10
+                              ? "font-semibold text-amber-700"
+                              : ""
+                          }
+                        >
+                          {values.room_type_other.length}/{MAX_CUSTOM_AMENITY_CHARS}
+                        </span>
+                      </div>
+                    </Field>
+                  </div>
+                ) : null}
               </div>
             </CardSection>
 
@@ -1032,7 +1073,7 @@ export default function ListARoomPage() {
               </div>
 
               <span className="mt-4 inline-block rounded-full bg-stone-200/70 px-3 py-1 text-xs font-semibold text-stone-700">
-                {ROOM_TYPE_LABEL[values.room_type]}
+                {roomTypeLabel(values.room_type, values.room_type_other)}
               </span>
               <h2 className="mt-3 text-xl font-bold text-stone-900">
                 {values.title || "Untitled room"}
@@ -1104,7 +1145,7 @@ export default function ListARoomPage() {
                 <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
                   About the space
                 </p>
-                <p className="mt-2 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-stone-600">
+                <p className="mt-2 min-w-0 max-w-full overflow-hidden whitespace-pre-wrap break-all text-sm leading-relaxed text-stone-600">
                   {values.description || "No description yet."}
                 </p>
               </div>

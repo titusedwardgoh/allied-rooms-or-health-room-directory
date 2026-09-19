@@ -1,4 +1,4 @@
-import { ROOM_TYPE_LABEL } from "@/lib/format";
+import { roomTypeLabel } from "@/lib/format";
 
 export default function RoomPlaceholder({ roomType }) {
   if (roomType === "talk_therapy") {
@@ -18,7 +18,7 @@ export default function RoomPlaceholder({ roomType }) {
           />
         </svg>
         <span className="mt-2 text-xs font-medium text-stone-500">
-          {ROOM_TYPE_LABEL[roomType] || "Talk Therapy Suite"}
+          {roomTypeLabel(roomType) || "Talk Therapy Suite"}
         </span>
       </div>
     );
@@ -41,7 +41,7 @@ export default function RoomPlaceholder({ roomType }) {
           />
         </svg>
         <span className="mt-2 text-xs font-medium text-teal-800/70">
-          {ROOM_TYPE_LABEL[roomType] || "Treatment / Plinth Room"}
+          {roomTypeLabel(roomType) || "Treatment / Plinth Room"}
         </span>
       </div>
     );
@@ -63,7 +63,7 @@ export default function RoomPlaceholder({ roomType }) {
         />
       </svg>
       <span className="mt-2 text-xs font-medium text-stone-500">
-        {ROOM_TYPE_LABEL[roomType] || "Consulting room"}
+        {roomTypeLabel(roomType) || "Consulting room"}
       </span>
     </div>
   );

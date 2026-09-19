@@ -25,6 +25,7 @@ export function listingHasProgress(values, photos, step) {
     values.price_per_day,
     values.description,
     values.amenities_other,
+    values.room_type_other,
   ].some((field) => String(field ?? "").trim().length > 0);
 }
 

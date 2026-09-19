@@ -6,7 +6,9 @@ import {
   AMENITY_LABEL,
   CUSTOM_AMENITY_PREFIX,
   customAmenityError,
+  customRoomTypeError,
   normalizeCustomAmenity,
+  parseStoredRoomType,
 } from "@/lib/format";
 import {
   insertPublishedRoom,
@@ -175,7 +177,7 @@ function listingToFormValues(room) {
       address_line: room.address_line || "",
       suburb: room.suburb || "",
       state: room.state || "VIC",
-      room_type: room.room_type || "talk_therapy",
+      ...parseStoredRoomType(room),
       price_per_day: room.price_per_day_cents
         ? String(Math.round(room.price_per_day_cents / 100))
         : "",
@@ -214,7 +216,7 @@ function parseListingForm(formData) {
   const addressLine = String(formData.get("address_line") ?? "").trim();
   const suburb = String(formData.get("suburb") ?? "").trim();
   const state = String(formData.get("state") ?? "VIC").trim();
-  const roomType = String(formData.get("room_type") ?? "").trim();
+  const roomTypeKey = String(formData.get("room_type") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const dollars = Number(formData.get("price_per_day"));
   const availableDays = formData
@@ -233,6 +235,13 @@ function parseListingForm(formData) {
   if (amenities.includes("other") && customAmenity) {
     amenities.push(`${CUSTOM_AMENITY_PREFIX}${customAmenity}`);
   }
+  const customRoomType = normalizeCustomAmenity(formData.get("room_type_other"));
+  const roomTypeOtherError = customRoomTypeError(customRoomType, {
+    required: roomTypeKey === "other",
+  });
+  if (roomTypeOtherError) return { error: roomTypeOtherError };
+  const roomType = roomTypeKey;
+  const roomTypeOther = roomTypeKey === "other" ? customRoomType : "";
   const photos = collectPhotos(formData);
   const imageSlots = formData.getAll("image_slots").map(String);
 
@@ -255,7 +264,7 @@ function parseListingForm(formData) {
   if (!STATES.includes(state)) {
     return { error: "Choose a valid Australian state." };
   }
-  if (!ROOM_TYPES.includes(roomType)) {
+  if (!ROOM_TYPES.includes(roomTypeKey)) {
     return { error: "Choose a room type." };
   }
   const rateError = dailyRateError(dollars);
@@ -277,6 +286,7 @@ function parseListingForm(formData) {
     suburb,
     state,
     roomType,
+    roomTypeOther,
     description,
     dollars,
     availableDays,
@@ -350,6 +360,7 @@ export async function createRoomListing(prevState, formData) {
       suburb,
       state,
       roomType,
+      roomTypeOther,
       description,
       dollars,
       availableDays,
@@ -378,6 +389,7 @@ export async function createRoomListing(prevState, formData) {
       state,
       price_per_day_cents: pricePerDayCents,
       room_type: roomType,
+      room_type_other: roomTypeOther || null,
       available_days: availableDays,
       amenities,
       description,

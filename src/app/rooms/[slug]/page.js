@@ -3,14 +3,15 @@ import { roomLocationLabel } from "@/lib/auAddress";
 import { getRoomBySlug } from "@/lib/db/rooms";
 import {
   DAY_LABEL,
-  ROOM_TYPE_LABEL,
+  listingRoomTypeLabel,
   amenityLabel,
   pricePerDayLabel,
   visibleAmenities,
 } from "@/lib/format";
 import RoomGallery from "@/components/RoomGallery";
 import { FadeIn } from "@/components/FadeIn";
-import { publishListing } from "./actions";
+import ScrollToTop from "@/components/ScrollToTop";
+import PublishListingBar from "@/components/PublishListingBar";
 
 export const dynamic = "force-dynamic";
 
@@ -45,37 +46,15 @@ export default async function RoomDetailPage({ params }) {
 
   return (
     <>
-      {isDraft ? (
-        <div className="sticky top-16 z-40 bg-amber-300 shadow-md shadow-stone-900/10">
-          <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-            <p className="text-base font-medium leading-snug text-stone-900 sm:text-lg">
-              <span className="font-extrabold">Draft Preview</span>
-              {" — "}
-              Your listing is not yet visible, click the button to publish.
-            </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <a
-                href={`/list-a-room?edit=${encodeURIComponent(room.slug)}`}
-                className="rounded-full border border-stone-900 bg-white px-4 py-2 text-sm font-semibold text-stone-900 hover:bg-stone-100"
-              >
-                Edit listing
-              </a>
-              <form action={publishListing}>
-                <input type="hidden" name="slug" value={room.slug} />
-                <button
-                  type="submit"
-                  className="rounded-full cursor-pointer bg-stone-900 px-4 py-2 text-sm font-semibold text-white hover:bg-stone-800"
-                >
-                  Publish listing
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ScrollToTop />
+      <PublishListingBar
+        slug={room.slug}
+        isDraft={isDraft}
+        editHref={`/list-a-room?edit=${encodeURIComponent(room.slug)}`}
+      />
       <main className="mx-auto max-w-6xl px-6 py-10 sm:px-8">
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_360px]">
-        <FadeIn>
+      <div className="grid min-w-0 grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <FadeIn className="min-w-0">
           <RoomGallery
             images={room.image_urls}
             title={room.title}
@@ -84,7 +63,7 @@ export default async function RoomDetailPage({ params }) {
 
           <div className="mt-6">
             <span className="rounded-full bg-stone-200/70 px-3 py-1 text-xs font-semibold text-stone-700">
-              {ROOM_TYPE_LABEL[room.room_type]}
+              {listingRoomTypeLabel(room)}
             </span>
             <h1 className="mt-3 font-display text-3xl font-bold text-stone-900">
               {room.title}
@@ -114,7 +93,7 @@ export default async function RoomDetailPage({ params }) {
             <h3 className="font-display text-lg font-semibold text-stone-900">
               About the Space
             </h3>
-            <p className="mt-3 min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed text-stone-600">
+            <p className="mt-3 min-w-0 max-w-full overflow-hidden whitespace-pre-wrap break-all leading-relaxed text-stone-600">
               {room.description}
             </p>
           </div>

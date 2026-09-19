@@ -1,4 +1,4 @@
-import { slugify } from "@/lib/format";
+import { matchesRoomTypeFilter, slugify } from "@/lib/format";
 import { mockRooms } from "@/lib/mockData";
 import {
   createSupabaseAdminClient,
@@ -47,7 +47,7 @@ function filterMock(rooms, filters = {}) {
     if (cleanSuburb && !room.suburb.toLowerCase().includes(cleanSuburb)) {
       return false;
     }
-    if (type && room.room_type !== type) return false;
+    if (!matchesRoomTypeFilter(room.room_type, type)) return false;
     if (
       selectedDays.length > 0 &&
       !selectedDays.some((d) => room.available_days.includes(d))

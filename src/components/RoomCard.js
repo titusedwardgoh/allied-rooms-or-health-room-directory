@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { DAY_LABEL, ROOM_TYPE_LABEL, pricePerDayLabel } from "@/lib/format";
+import { DAY_LABEL, listingRoomTypeLabel, pricePerDayLabel } from "@/lib/format";
 import RoomPlaceholder from "./RoomPlaceholder";
 
 export default function RoomCard({ room }) {
@@ -20,7 +20,7 @@ export default function RoomCard({ room }) {
           <RoomPlaceholder roomType={room.room_type} />
         )}
         <div className="absolute left-3 top-3 rounded-full bg-stone-900/80 px-3 py-1 text-[11px] font-medium text-stone-50 backdrop-blur-sm">
-          {ROOM_TYPE_LABEL[room.room_type]}
+          {listingRoomTypeLabel(room)}
         </div>
       </div>
 

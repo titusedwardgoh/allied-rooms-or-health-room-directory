@@ -1,13 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { publishRoomBySlug } from "@/lib/db/rooms";
 import { createSupabaseAdminClient } from "@/lib/supabase";
 
-export async function publishListing(formData) {
-  const slug = String(formData.get("slug") || "").trim();
-  if (!slug) {
+export async function publishListing(slug) {
+  const value = String(slug || "").trim();
+  if (!value) {
     return { error: "Missing listing." };
   }
 
@@ -16,7 +15,7 @@ export async function publishListing(formData) {
     return { error: "Could not publish this listing. Please try again." };
   }
 
-  const { error } = await publishRoomBySlug(admin, slug);
+  const { error } = await publishRoomBySlug(admin, value);
   if (error) {
     console.error("publishListing:", error.message);
     return { error: "Could not publish this listing. Please try again." };
@@ -24,6 +23,5 @@ export async function publishListing(formData) {
 
   revalidatePath("/");
   revalidatePath("/rooms");
-  revalidatePath(`/rooms/${slug}`);
-  redirect(`/rooms/${slug}`);
+  return { ok: true };
 }

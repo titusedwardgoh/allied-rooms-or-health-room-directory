@@ -60,10 +60,23 @@ export function dailyRateError(value) {
   return "";
 }
 
+export function letterCount(value) {
+  return (String(value ?? "").match(/\p{L}/gu) || []).length;
+}
+
+export function lettersRequiredError(value, noun, minLetters = 2) {
+  if (letterCount(value) < minLetters) {
+    return `${noun} must include letters, not only numbers or symbols.`;
+  }
+  return "";
+}
+
 export function practiceDetailsError({ practiceName, contactEmail, phone, websiteUrl }) {
   if (practiceName.trim().length < MIN_PRACTICE_NAME_LENGTH) {
     return `Practice name must be at least ${MIN_PRACTICE_NAME_LENGTH} characters.`;
   }
+  const practiceLettersError = lettersRequiredError(practiceName, "Practice name");
+  if (practiceLettersError) return practiceLettersError;
   if (!isEmail(contactEmail)) {
     return "Enter a valid contact email, such as hello@clinic.com.au.";
   }

@@ -32,6 +32,7 @@ import {
   normalizeWebsiteUrl,
   addressLineError,
   dailyRateError,
+  lettersRequiredError,
   practiceDetailsError,
   toAuPhoneDigits,
 } from "@/lib/validate";
@@ -248,6 +249,8 @@ function parseListingForm(formData) {
   if (!title || title.length < 8) {
     return { error: "Room title must be at least 8 characters long." };
   }
+  const titleLettersError = lettersRequiredError(title, "Room title");
+  if (titleLettersError) return { error: titleLettersError };
   const streetError = addressLineError(addressLine);
   if (streetError) return { error: streetError };
   if (!suburb) return { error: "Suburb is required." };
@@ -256,6 +259,11 @@ function parseListingForm(formData) {
       error: `Description must be at least ${MIN_DESCRIPTION_CHARS} characters.`,
     };
   }
+  const descriptionLettersError = lettersRequiredError(
+    description,
+    "Description",
+  );
+  if (descriptionLettersError) return { error: descriptionLettersError };
   if (description.length > MAX_DESCRIPTION_CHARS) {
     return {
       error: `Description must be ${MAX_DESCRIPTION_CHARS} characters or fewer.`,

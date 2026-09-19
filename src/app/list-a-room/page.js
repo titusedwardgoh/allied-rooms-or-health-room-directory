@@ -23,6 +23,7 @@ import {
   addressLineError,
   MAX_PRICE_PER_DAY_DOLLARS,
   dailyRateError,
+  lettersRequiredError,
   practiceDetailsError,
 } from "@/lib/validate";
 import PhotoCropModal from "@/components/PhotoCropModal";
@@ -344,6 +345,8 @@ export default function ListARoomPage() {
       if (!values.title.trim() || values.title.trim().length < 8) {
         return "Room title must be at least 8 characters long.";
       }
+      const titleLettersError = lettersRequiredError(values.title, "Room title");
+      if (titleLettersError) return titleLettersError;
       const streetError = addressLineError(values.address_line);
       if (streetError) return streetError;
       if (!values.suburb.trim()) {
@@ -365,6 +368,11 @@ export default function ListARoomPage() {
       if (!values.description.trim() || values.description.trim().length < 30) {
         return "Description must be at least 30 characters long.";
       }
+      const descriptionLettersError = lettersRequiredError(
+        values.description,
+        "Description",
+      );
+      if (descriptionLettersError) return descriptionLettersError;
       if (values.description.trim().length > 1500) {
         return "Description must be 1500 characters or fewer.";
       }
@@ -611,7 +619,7 @@ export default function ListARoomPage() {
                   placeholder="Richmond Wellness Collective"
                 />
                 <span className="mt-1.5 block text-xs text-stone-400">
-                  At least 4 characters.
+                  At least 4 characters, including letters.
                 </span>
               </Field>
               <Field label="Contact email" required>
@@ -691,7 +699,8 @@ export default function ListARoomPage() {
                   minLength={8}
                 />
                 <span className="mt-1.5 block text-xs text-stone-400">
-                  At least 8 characters ({values.title.length}/8).
+                  At least 8 characters, including letters ({values.title.length}
+                  /8).
                 </span>
               </Field>
               <div>
@@ -917,7 +926,7 @@ export default function ListARoomPage() {
                 <div className="mt-1.5 flex items-center justify-between gap-3 text-xs text-stone-400">
                   <span>
                     Describe light, acoustic treatment, parking, and shared
-                    amenities.
+                    amenities. Include letters, not only numbers or symbols.
                   </span>
                   <span
                     className={

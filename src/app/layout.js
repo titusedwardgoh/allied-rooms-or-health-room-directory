@@ -46,6 +46,12 @@ export default function RootLayout({ children }) {
                 <Link href="/list-a-room" className="hover:text-stone-900">
                   List a Room
                 </Link>
+                <Link href="/about" className="hover:text-stone-900">
+                  About
+                </Link>
+                <Link href="/contact" className="hover:text-stone-900">
+                  Contact
+                </Link>
                 <span>Melbourne · VIC</span>
               </nav>
             </FadeInOnView>

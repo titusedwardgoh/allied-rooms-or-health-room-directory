@@ -115,7 +115,7 @@ export default function ContactPage() {
                   setValues(INITIAL);
                   setSent(false);
                 }}
-                className="mt-8 rounded-full border border-stone-200 bg-white px-5 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-50"
+                className="mt-8 rounded-full border cursor-pointer border-stone-200 bg-white px-5 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-50"
               >
                 Send another message
               </button>
@@ -203,7 +203,7 @@ export default function ContactPage() {
                 <button
                   type="submit"
                   disabled={sending}
-                  className="rounded-full bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-950 active:scale-95 disabled:opacity-60"
+                  className="rounded-full bg-teal-900 px-5 cursor-pointer py-2.5 text-sm font-semibold text-white transition hover:bg-teal-950 active:scale-95 disabled:opacity-60"
                 >
                   {sending ? "Sending…" : "Send message"}
                 </button>

@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import Logo from "@/components/Logo";
 import SiteHeader from "@/components/SiteHeader";
-import { FadeInOnView, MotionProvider } from "@/components/FadeIn";
+import Footer from "@/components/Footer";
+import { MotionProvider } from "@/components/FadeIn";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -30,32 +29,7 @@ export default function RootLayout({ children }) {
         <MotionProvider>
           <SiteHeader />
           {children}
-          <footer className="border-t border-stone-200 bg-white">
-            <FadeInOnView className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-8">
-              <div>
-                <Logo />
-                <p className="mt-1 text-stone-600">
-                  Sessional rooms for allied health, listed with the day rate up
-                  front.
-                </p>
-              </div>
-              <nav className="flex flex-wrap gap-4 text-sm text-stone-600">
-                <Link href="/rooms" className="hover:text-stone-900">
-                  Find a Room
-                </Link>
-                <Link href="/list-a-room" className="hover:text-stone-900">
-                  List a Room
-                </Link>
-                <Link href="/about" className="hover:text-stone-900">
-                  About
-                </Link>
-                <Link href="/contact" className="hover:text-stone-900">
-                  Contact
-                </Link>
-                <span>Melbourne · VIC</span>
-              </nav>
-            </FadeInOnView>
-          </footer>
+          <Footer />
         </MotionProvider>
       </body>
     </html>

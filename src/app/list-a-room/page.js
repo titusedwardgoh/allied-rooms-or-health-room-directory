@@ -28,7 +28,7 @@ import {
 } from "@/lib/validate";
 import PhotoCropModal from "@/components/PhotoCropModal";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
-import RoomPlaceholder from "@/components/RoomPlaceholder";
+import RoomGallery from "@/components/RoomGallery";
 import { fileToDataUrl, ensurePhotoFile } from "@/lib/cropImage";
 import { FadeIn } from "@/components/FadeIn";
 import {
@@ -1034,28 +1034,28 @@ export default function ListARoomPage() {
                         </button>
                       )}
 
-                      {item.kind === "file" ? (
+                      <div className="absolute right-2 top-2 flex items-center gap-1">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             setEditingIndex(index);
                           }}
-                          className="absolute bottom-2 left-2 cursor-pointer rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-stone-700 hover:bg-white"
+                          className="cursor-pointer rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-stone-700 hover:bg-white"
                         >
                           Edit
                         </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removePhoto(index);
-                        }}
-                        className="absolute right-2 top-2 cursor-pointer rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-stone-700 hover:bg-white"
-                      >
-                        Remove
-                      </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removePhoto(index);
+                          }}
+                          className="cursor-pointer rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-stone-700 hover:bg-white"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1068,18 +1068,11 @@ export default function ListARoomPage() {
               description="This is how the public listing will look."
             >
               <div className="min-w-0">
-              <div className="aspect-video w-full overflow-hidden rounded-xl border border-stone-200 bg-stone-100">
-                {previewUrls.length > 0 ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={previewUrls[0]}
-                    alt="Hero preview"
-                    className="h-full w-full object-cover object-center"
-                  />
-                ) : (
-                  <RoomPlaceholder roomType={values.room_type} />
-                )}
-              </div>
+              <RoomGallery
+                images={previewUrls}
+                title={values.title || "Untitled room"}
+                roomType={values.room_type}
+              />
 
               <span className="mt-4 inline-block rounded-full bg-stone-200/70 px-3 py-1 text-xs font-semibold text-stone-700">
                 {roomTypeLabel(values.room_type, values.room_type_other)}
@@ -1249,9 +1242,17 @@ export default function ListARoomPage() {
         </div>
       ) : null}
 
-      {editingIndex != null && gallery[editingIndex]?.kind === "file" ? (
+      {editingIndex != null && gallery[editingIndex] ? (
         <PhotoCropModal
-          file={gallery[editingIndex].original || gallery[editingIndex].file}
+          file={
+            gallery[editingIndex].original ||
+            (gallery[editingIndex].originalSrc
+              ? null
+              : gallery[editingIndex].file) ||
+            null
+          }
+          src={gallery[editingIndex].originalSrc || gallery[editingIndex].src}
+          fileName={gallery[editingIndex].file?.name || "photo.jpg"}
           onClose={() => setEditingIndex(null)}
           onSave={(cropped) => {
             const current = gallery[editingIndex];
@@ -1270,7 +1271,8 @@ export default function ListARoomPage() {
                   ? {
                       kind: "file",
                       file: nextFile,
-                      original: current.original || current.file,
+                      original: current.original || current.file || null,
+                      originalSrc: current.originalSrc || current.src,
                       src: nextPreview,
                     }
                   : item,

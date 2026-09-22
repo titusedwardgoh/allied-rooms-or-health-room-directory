@@ -7,6 +7,9 @@ const MAX_OUTPUT_WIDTH = 1920;
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const image = new Image();
+    if (/^https?:\/\//i.test(src)) {
+      image.crossOrigin = "anonymous";
+    }
     image.onload = () => {
       const finish = () => {
         if ((image.naturalWidth || image.width) > 0) resolve(image);

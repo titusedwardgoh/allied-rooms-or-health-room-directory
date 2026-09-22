@@ -2,11 +2,15 @@ import Link from "next/link";
 import { DAY_LABEL, listingRoomTypeLabel, pricePerDayLabel } from "@/lib/format";
 import RoomPlaceholder from "./RoomPlaceholder";
 
+const DAYS = Object.keys(DAY_LABEL);
+
 export default function RoomCard({ room }) {
+  const selectedDays = new Set(room.available_days ?? []);
+
   return (
     <Link
       href={`/rooms/${room.slug}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-stone-200/80 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-stone-900/5"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200/80 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-stone-900/5"
     >
       <div className="relative aspect-video w-full overflow-hidden bg-stone-100">
         {room.image_urls && room.image_urls.length > 0 ? (
@@ -38,23 +42,26 @@ export default function RoomCard({ room }) {
           </h3>
         </div>
 
-        <div className="mt-4 flex items-center justify-between border-t border-stone-100 pt-3">
-          <div className="flex flex-wrap gap-1">
-            {room.available_days.map((d) => (
-              <span
-                key={d}
-                className="rounded bg-stone-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-stone-600"
-              >
-                {DAY_LABEL[d]}
-              </span>
-            ))}
+        <div className="mt-4 flex items-center gap-3 border-t border-stone-100 pt-3">
+          <div className="grid min-w-0 flex-1 grid-cols-7 gap-0.5">
+            {DAYS.map((day) => {
+              const on = selectedDays.has(day);
+              return (
+                <span
+                  key={day}
+                  className={`rounded py-0.5 text-center text-[9px] font-semibold uppercase leading-none sm:text-[10px] ${
+                    on ? "bg-stone-100 text-stone-700" : "text-stone-300"
+                  }`}
+                >
+                  {DAY_LABEL[day]}
+                </span>
+              );
+            })}
           </div>
 
-          <div className="text-right">
-            <span className="font-display text-base font-bold text-stone-900">
-              {pricePerDayLabel(room.price_per_day_cents)}
-            </span>
-          </div>
+          <p className="shrink-0 whitespace-nowrap text-right font-display text-base font-bold tabular-nums text-stone-900">
+            {pricePerDayLabel(room.price_per_day_cents)}
+          </p>
         </div>
       </div>
     </Link>

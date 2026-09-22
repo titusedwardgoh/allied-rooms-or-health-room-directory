@@ -60,7 +60,7 @@ export default async function RoomsPage({ searchParams }) {
           ) : (
             <Stagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {rooms.map((room) => (
-                <StaggerItem key={room.id}>
+                <StaggerItem key={room.id} className="h-full">
                   <RoomCard room={room} />
                 </StaggerItem>
               ))}

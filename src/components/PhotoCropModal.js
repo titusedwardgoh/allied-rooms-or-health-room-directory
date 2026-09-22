@@ -10,7 +10,7 @@ import { CROP_ASPECT, cropImageFile } from "@/lib/cropImage";
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 3;
 
-export default function PhotoCropModal({ file, onClose, onSave }) {
+export default function PhotoCropModal({ file, src, fileName, onClose, onSave }) {
   const stageRef = useRef(null);
   const [mounted, setMounted] = useState(false);
   const [imageSrc, setImageSrc] = useState("");
@@ -30,28 +30,57 @@ export default function PhotoCropModal({ file, onClose, onSave }) {
     setZoom(1);
     setCroppedArea(null);
     setError("");
-  }, [file]);
+  }, [file, src]);
 
   useEffect(() => {
-    if (!file) {
-      setImageSrc("");
-      return undefined;
+    let cancelled = false;
+    let objectUrl = "";
+
+    async function load() {
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (!cancelled) setImageSrc(String(reader.result || ""));
+        };
+        reader.onerror = () => {
+          if (!cancelled) setError("Could not read this photo.");
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+
+      if (!src) {
+        setImageSrc("");
+        return;
+      }
+
+      if (src.startsWith("data:") || src.startsWith("blob:")) {
+        setImageSrc(src);
+        return;
+      }
+
+      try {
+        const response = await fetch(src);
+        if (!response.ok) throw new Error("Could not load this photo.");
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        if (cancelled) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        objectUrl = url;
+        setImageSrc(url);
+      } catch {
+        if (!cancelled) setImageSrc(src);
+      }
     }
 
-    let cancelled = false;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (!cancelled) setImageSrc(String(reader.result || ""));
-    };
-    reader.onerror = () => {
-      if (!cancelled) setError("Could not read this photo.");
-    };
-    reader.readAsDataURL(file);
-
+    load();
     return () => {
       cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [file]);
+  }, [file, src]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -87,7 +116,7 @@ export default function PhotoCropModal({ file, onClose, onSave }) {
   }, [mounted, imageSrc]);
 
   async function handleSave() {
-    if (!file || !imageSrc || !croppedArea || saving) return;
+    if (!imageSrc || !croppedArea || saving) return;
 
     const cropWidth = Number(croppedArea.width);
     if (!Number.isFinite(cropWidth) || cropWidth <= 0) {
@@ -98,7 +127,11 @@ export default function PhotoCropModal({ file, onClose, onSave }) {
     setSaving(true);
     setError("");
     try {
-      const cropped = await cropImageFile(imageSrc, croppedArea, file.name);
+      const cropped = await cropImageFile(
+        imageSrc,
+        croppedArea,
+        file?.name || fileName || "photo.jpg",
+      );
       onSave(cropped);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not crop this photo.");
@@ -106,7 +139,7 @@ export default function PhotoCropModal({ file, onClose, onSave }) {
     }
   }
 
-  if (!mounted || !file) return null;
+  if (!mounted || (!file && !src)) return null;
 
   return createPortal(
     <div

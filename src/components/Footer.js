@@ -7,9 +7,6 @@ const SUPPORT_EMAIL = "alliedrooms@gmail.com";
 const LINK_CLASS =
   "text-sm text-stone-600 transition-colors hover:text-teal-900";
 
-const COLS =
-  "grid grid-cols-2 items-start gap-x-10 gap-y-10 sm:grid-cols-3 lg:grid-cols-[minmax(0,1.8fr)_repeat(3,minmax(0,1fr))] lg:gap-x-12";
-
 const MARKETPLACE = [
   { href: "/rooms", label: "Find a Room" },
   { href: "/list-a-room", label: "List a Room" },
@@ -22,7 +19,7 @@ const COMPANY = [
 
 function FooterColumn({ title, children }) {
   return (
-    <div className="min-w-0">
+    <div>
       <h2 className="flex h-9 items-center text-xs font-bold uppercase leading-none tracking-wider text-stone-400">
         {title}
       </h2>
@@ -35,8 +32,8 @@ export default function Footer() {
   return (
     <footer className="border-t border-stone-200/80 bg-stone-50/80">
       <FadeInOnView className="mx-auto max-w-6xl px-6 py-12 sm:px-8 sm:py-14">
-        <div className={COLS}>
-          <div className="col-span-2 max-w-sm sm:col-span-3 lg:col-span-1">
+        <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-sm shrink-0">
             <Logo />
             <p className="mt-3 text-sm leading-relaxed text-stone-600">
               Sessional rooms for allied health. Listed with the day rate up
@@ -51,7 +48,10 @@ export default function Footer() {
             </p>
           </div>
 
-          <nav aria-label="Footer" className="contents">
+          <nav
+            aria-label="Footer"
+            className="grid grid-cols-2 gap-x-10 gap-y-8 sm:flex sm:gap-12"
+          >
             <FooterColumn title="Marketplace">
               {MARKETPLACE.map((link) => (
                 <li key={link.href}>

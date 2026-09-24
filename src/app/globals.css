@@ -12,6 +12,8 @@
   --color-line: #e7e5e4;
   --color-sage: #115e59;
   --shadow-warm: 0 12px 40px -12px rgb(28 25 23 / 0.12);
+  --container-page: 90rem;
+  --container-page-inset: 80rem;
 }
 
 html,

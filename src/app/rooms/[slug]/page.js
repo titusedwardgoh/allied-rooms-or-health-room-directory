@@ -52,7 +52,7 @@ export default async function RoomDetailPage({ params }) {
         isDraft={isDraft}
         editHref={`/list-a-room?edit=${encodeURIComponent(room.slug)}`}
       />
-      <main className="mx-auto max-w-6xl px-6 py-10 sm:px-8">
+      <main className="mx-auto max-w-6xl px-6 py-10 sm:px-8 2xl:max-w-page-inset">
       <div className="grid min-w-0 grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_360px]">
         <FadeIn className="min-w-0">
           <RoomGallery
@@ -93,7 +93,7 @@ export default async function RoomDetailPage({ params }) {
             <h3 className="font-display text-lg font-semibold text-stone-900">
               About the Space
             </h3>
-            <p className="mt-3 min-w-0 max-w-full overflow-hidden whitespace-pre-wrap break-all leading-relaxed text-stone-600">
+            <p className="mt-3 min-w-0 whitespace-pre-wrap break-words leading-relaxed text-stone-600">
               {room.description}
             </p>
           </div>

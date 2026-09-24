@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
+import FitImage from "./FitImage";
 import RoomPlaceholder from "./RoomPlaceholder";
 
 export default function RoomGallery({ images, title, roomType }) {
@@ -61,7 +62,7 @@ export default function RoomGallery({ images, title, roomType }) {
 
   if (count === 0) {
     return (
-      <div className="relative aspect-video max-h-[420px] w-full overflow-hidden rounded-2xl border border-stone-200 bg-stone-100">
+      <div className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl border border-stone-200 bg-stone-100">
         <RoomPlaceholder roomType={roomType} />
       </div>
     );
@@ -71,7 +72,7 @@ export default function RoomGallery({ images, title, roomType }) {
     mounted && open
       ? createPortal(
           <div
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-stone-950/90 p-4 sm:p-8"
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-black p-4 sm:p-8"
             onClick={() => setOpen(false)}
             role="dialog"
             aria-modal="true"
@@ -117,7 +118,7 @@ export default function RoomGallery({ images, title, roomType }) {
             <img
               src={current}
               alt={`${title} — photo ${index + 1} of ${count}`}
-              className="max-h-[88vh] max-w-full object-contain"
+              className="max-h-[88vh] max-w-full bg-black object-contain"
               onClick={(event) => event.stopPropagation()}
               onTouchStart={onTouchStart}
               onTouchEnd={onTouchEnd}
@@ -135,7 +136,7 @@ export default function RoomGallery({ images, title, roomType }) {
 
   return (
     <div>
-      <div className="relative aspect-video max-h-[420px] w-full overflow-hidden rounded-2xl border border-stone-200 bg-stone-100">
+      <div className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl border border-stone-200 bg-stone-100">
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -144,12 +145,7 @@ export default function RoomGallery({ images, title, roomType }) {
           className="absolute inset-0 cursor-zoom-in"
           aria-label={`View ${title} photos`}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={current}
-            alt={title}
-            className="h-full w-full object-cover object-center"
-          />
+          <FitImage src={current} alt={title} className="h-full w-full" />
         </button>
 
         <span className="pointer-events-none absolute bottom-3 right-3 z-10 inline-flex items-center gap-1 rounded-full bg-stone-900/80 px-2.5 py-1 text-[11px] font-semibold text-white">
@@ -191,10 +187,7 @@ export default function RoomGallery({ images, title, roomType }) {
             <button
               key={url}
               type="button"
-              onClick={() => {
-                setIndex(photoIndex);
-                setOpen(true);
-              }}
+              onClick={() => setIndex(photoIndex)}
               className={`h-16 w-24 shrink-0 cursor-pointer overflow-hidden rounded-lg border ${
                 photoIndex === index
                   ? "border-teal-900 ring-2 ring-teal-900/30"
@@ -203,12 +196,7 @@ export default function RoomGallery({ images, title, roomType }) {
               aria-label={`Show photo ${photoIndex + 1}`}
               aria-current={photoIndex === index ? "true" : undefined}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={url}
-                alt=""
-                className="h-full w-full object-cover object-center"
-              />
+              <FitImage src={url} alt="" className="h-full w-full" />
             </button>
           ))}
         </div>

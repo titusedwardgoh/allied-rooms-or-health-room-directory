@@ -13,8 +13,8 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-stone-50">
-      <section className="relative px-6 pb-6 pt-12 sm:px-8 sm:pb-12 sm:pt-24">
-        <div className="mx-auto max-w-6xl text-center">
+      <section className="relative px-6 pb-6 pt-12 sm:px-8 sm:pb-12 sm:pt-24 2xl:pt-32">
+        <div className="mx-auto max-w-6xl text-center 2xl:max-w-page">
           <FadeIn>
             <span className="inline-block rounded-full bg-stone-200/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-stone-700">
               Melbourne Allied Health
@@ -22,7 +22,7 @@ export default async function Home() {
           </FadeIn>
 
           <FadeIn delay={0.08}>
-            <h1 className="mt-6 font-sans text-4xl font-extrabold tracking-tight text-stone-900 sm:text-6xl sm:leading-[1.1]">
+            <h1 className="mt-6 font-sans text-4xl font-extrabold tracking-tight text-stone-900 sm:text-6xl sm:leading-[1.1] 2xl:text-7xl">
               Find consulting rooms, <br className="hidden sm:inline" />
               <span className="font-extrabold text-teal-900">by the day.</span>
             </h1>
@@ -40,7 +40,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <FadeInOnView className="mx-auto max-w-6xl px-6 py-6 sm:px-8 sm:py-12">
+      <FadeInOnView className="mx-auto max-w-6xl px-6 py-6 sm:px-8 sm:py-12 2xl:max-w-page">
         <div className="mb-6">
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
             Explore Locations
@@ -52,7 +52,7 @@ export default async function Home() {
         <SuburbBento stats={stats} />
       </FadeInOnView>
 
-      <section className="mx-auto max-w-6xl px-6 py-6 sm:px-8 sm:py-12">
+      <section className="mx-auto max-w-6xl px-6 py-6 sm:px-8 sm:py-12 2xl:max-w-page-inset">
         <FadeInOnView className="mb-6 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-stone-400">

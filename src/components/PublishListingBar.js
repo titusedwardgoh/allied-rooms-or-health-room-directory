@@ -198,7 +198,7 @@ export default function PublishListingBar({ slug, editHref, isDraft }) {
     <>
       {showBanner ? (
         <div className="sticky top-16 z-40 bg-amber-300 shadow-md shadow-stone-900/10">
-          <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+          <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 2xl:max-w-page">
             <p className="text-base font-medium leading-snug text-stone-900 sm:text-lg">
               <span className="font-extrabold">Draft Preview</span>
               {" — "}
@@ -233,7 +233,7 @@ export default function PublishListingBar({ slug, editHref, isDraft }) {
           {error ? (
             <p
               role="alert"
-              className="mx-auto max-w-6xl px-6 pb-4 text-sm font-medium text-red-800 sm:px-8"
+              className="mx-auto max-w-6xl px-6 pb-4 text-sm font-medium text-red-800 sm:px-8 2xl:max-w-page"
             >
               {error}
             </p>

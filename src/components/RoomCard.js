@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DAY_LABEL, listingRoomTypeLabel, pricePerDayLabel } from "@/lib/format";
+import FitImage from "./FitImage";
 import RoomPlaceholder from "./RoomPlaceholder";
 
 const DAYS = Object.keys(DAY_LABEL);
@@ -14,11 +15,11 @@ export default function RoomCard({ room }) {
     >
       <div className="relative aspect-video w-full overflow-hidden bg-stone-100">
         {room.image_urls && room.image_urls.length > 0 ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <FitImage
             src={room.image_urls[0]}
             alt={room.title}
-            className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+            className="h-full w-full transition-transform duration-300"
+            coverClassName="group-hover:scale-105"
           />
         ) : (
           <RoomPlaceholder roomType={room.room_type} />

@@ -73,7 +73,7 @@ export default function SiteHeader() {
         transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         className="sticky top-0 z-50 border-b border-stone-200/80 bg-stone-50/80 backdrop-blur-md"
       >
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-8">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-8 2xl:max-w-page">
           <div className="flex min-w-0 items-center gap-5 sm:gap-7">
             <Logo priority wordmarkClassName="hidden sm:inline" />
             <nav className="hidden items-center gap-1 sm:flex" aria-label="About and contact">

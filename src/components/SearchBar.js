@@ -328,7 +328,7 @@ export default function SearchBar({
       <form
         ref={formRef}
         onSubmit={handleSearch}
-        className={`relative mx-auto hidden max-w-4xl rounded-3xl border border-stone-200 shadow-md shadow-stone-900/5 sm:block sm:rounded-full ${
+        className={`relative mx-auto hidden max-w-4xl rounded-3xl border border-stone-200 shadow-md shadow-stone-900/5 sm:block sm:rounded-full 2xl:max-w-5xl ${
           active && !mobileOpen ? "bg-stone-100" : "bg-white"
         }`}
       >

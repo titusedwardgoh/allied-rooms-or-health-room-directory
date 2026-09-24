@@ -25,7 +25,9 @@ export default function SuburbBento({ stats }) {
             key={item.suburb}
             href={`/rooms?suburb=${encodeURIComponent(item.suburb.toLowerCase())}`}
             className={`group relative flex h-56 w-[78vw] shrink-0 snap-start flex-col justify-between overflow-hidden rounded-2xl p-6 transition-all duration-300 sm:h-auto sm:w-auto sm:hover:-translate-y-0.5 sm:hover:shadow-xl ${
-              isFeatured ? "sm:col-span-2 sm:row-span-2 sm:min-h-[260px]" : "sm:min-h-[180px]"
+              isFeatured
+                ? "sm:col-span-2 sm:row-span-2 sm:min-h-[260px] 2xl:min-h-[340px]"
+                : "sm:min-h-[180px] 2xl:min-h-[220px]"
             }`}
           >
             <Image

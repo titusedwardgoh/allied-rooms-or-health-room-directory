@@ -97,7 +97,7 @@ export async function cropImageFile(imageSrc, cropArea, originalName) {
   canvas.height = height;
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
-  ctx.fillStyle = "#fafaf9";
+  ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, width, height);
   ctx.drawImage(
     image,

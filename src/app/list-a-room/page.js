@@ -26,10 +26,12 @@ import {
   lettersRequiredError,
   practiceDetailsError,
 } from "@/lib/validate";
+import FitImage from "@/components/FitImage";
 import PhotoCropModal from "@/components/PhotoCropModal";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import RoomGallery from "@/components/RoomGallery";
 import { fileToDataUrl, ensurePhotoFile } from "@/lib/cropImage";
+import { ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import {
   LeaveListingModal,
@@ -181,10 +183,24 @@ function validateImageDimensions(file) {
   });
 }
 
+function createPhotoId() {
+  return `photo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 function reorderPhotos(list, indexToPromote) {
   if (indexToPromote === 0) return list;
   const target = list[indexToPromote];
   return [target, ...list.filter((_, i) => i !== indexToPromote)];
+}
+
+function movePhotoInList(list, from, to) {
+  if (from === to || from < 0 || to < 0 || from >= list.length || to >= list.length) {
+    return list;
+  }
+  const next = [...list];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
 }
 
 function previewAmenityItems(amenities, amenitiesOther) {
@@ -203,6 +219,8 @@ export default function ListARoomPage() {
   const [values, setValues] = useState(INITIAL);
   const [gallery, setGallery] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
+  const [dragIndex, setDragIndex] = useState(null);
+  const [overIndex, setOverIndex] = useState(null);
   const [stepError, setStepError] = useState("");
   const [stepBlockedMessage, setStepBlockedMessage] = useState("");
   const [photoError, setPhotoError] = useState("");
@@ -253,7 +271,11 @@ export default function ListARoomPage() {
       }
       setValues(listing.values);
       setGallery(
-        (listing.imageUrls || []).map((src) => ({ kind: "url", src })),
+        (listing.imageUrls || []).map((src) => ({
+          id: createPhotoId(),
+          kind: "url",
+          src,
+        })),
       );
       setEditReady(true);
     });
@@ -316,6 +338,7 @@ export default function ListARoomPage() {
     setGallery((current) => [
       ...current,
       ...accepted.map((file, index) => ({
+        id: createPhotoId(),
         kind: "file",
         file,
         original: file,
@@ -326,6 +349,10 @@ export default function ListARoomPage() {
 
   function makeCoverPhoto(indexToPromote) {
     setGallery((current) => reorderPhotos(current, indexToPromote));
+  }
+
+  function movePhoto(from, to) {
+    setGallery((current) => movePhotoInList(current, from, to));
   }
 
   function removePhoto(index) {
@@ -951,7 +978,7 @@ export default function ListARoomPage() {
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
-                addFiles(e.dataTransfer.files);
+                if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
               }}
               onClick={() => fileInputRef.current?.click()}
               className={`block cursor-pointer rounded-2xl border border-dashed bg-stone-50/50 px-4 py-10 text-center transition-colors hover:border-teal-800 hover:bg-white ${
@@ -997,23 +1024,53 @@ export default function ListARoomPage() {
                     Listing photos ({previewUrls.length}/6)
                   </p>
                   <p className="text-xs text-stone-500">
-                    First photo is your main header card. Edit to reposition in
-                    the 16:9 frame.
+                    Drag to rearrange.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {gallery.map((item, index) => (
                     <div
-                      key={`${item.kind}-${item.src}-${index}`}
-                      className="group relative overflow-hidden rounded-xl border border-stone-200 bg-stone-100"
+                      key={item.id || `${item.kind}-${item.src}-${index}`}
+                      draggable
+                      onDragStart={(event) => {
+                        event.dataTransfer.effectAllowed = "move";
+                        event.dataTransfer.setData("text/plain", String(index));
+                        setDragIndex(index);
+                      }}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = "move";
+                        if (overIndex !== index) setOverIndex(index);
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const from = Number(
+                          event.dataTransfer.getData("text/plain"),
+                        );
+                        movePhoto(
+                          Number.isFinite(from) ? from : dragIndex,
+                          index,
+                        );
+                        setDragIndex(null);
+                        setOverIndex(null);
+                      }}
+                      onDragEnd={() => {
+                        setDragIndex(null);
+                        setOverIndex(null);
+                      }}
+                      className={`group relative cursor-grab overflow-hidden rounded-xl border bg-stone-100 active:cursor-grabbing ${
+                        overIndex === index && dragIndex !== index
+                          ? "border-teal-900 ring-2 ring-teal-900/30"
+                          : "border-stone-200"
+                      } ${dragIndex === index ? "opacity-50" : ""}`}
                     >
-                      <div className="aspect-video w-full overflow-hidden bg-stone-900">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                      <div className="aspect-video w-full overflow-hidden bg-stone-100">
+                        <FitImage
                           src={item.src}
                           alt=""
-                          className="h-full w-full object-cover object-center"
+                          className="pointer-events-none h-full w-full"
                         />
                       </div>
 
@@ -1024,6 +1081,7 @@ export default function ListARoomPage() {
                       ) : (
                         <button
                           type="button"
+                          draggable={false}
                           onClick={(e) => {
                             e.stopPropagation();
                             makeCoverPhoto(index);
@@ -1037,6 +1095,7 @@ export default function ListARoomPage() {
                       <div className="absolute right-2 top-2 flex items-center gap-1">
                         <button
                           type="button"
+                          draggable={false}
                           onClick={(e) => {
                             e.stopPropagation();
                             setEditingIndex(index);
@@ -1047,6 +1106,7 @@ export default function ListARoomPage() {
                         </button>
                         <button
                           type="button"
+                          draggable={false}
                           onClick={(e) => {
                             e.stopPropagation();
                             removePhoto(index);
@@ -1054,6 +1114,39 @@ export default function ListARoomPage() {
                           className="cursor-pointer rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-stone-700 hover:bg-white"
                         >
                           Remove
+                        </button>
+                      </div>
+
+                      <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-1">
+                        <button
+                          type="button"
+                          draggable={false}
+                          disabled={index === 0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            movePhoto(index, index - 1);
+                          }}
+                          className="cursor-pointer rounded-full bg-white/90 p-1 text-stone-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                          aria-label="Move photo earlier"
+                        >
+                          <ChevronLeft className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="inline-flex items-center gap-0.5 rounded-full bg-stone-900/75 px-2 py-0.5 text-[10px] font-medium text-white">
+                          <GripVertical className="h-3 w-3" />
+                          Drag
+                        </span>
+                        <button
+                          type="button"
+                          draggable={false}
+                          disabled={index === gallery.length - 1}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            movePhoto(index, index + 1);
+                          }}
+                          className="cursor-pointer rounded-full bg-white/90 p-1 text-stone-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                          aria-label="Move photo later"
+                        >
+                          <ChevronRight className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </div>
@@ -1269,6 +1362,7 @@ export default function ListARoomPage() {
               items.map((item, i) =>
                 i === editingIndex
                   ? {
+                      ...current,
                       kind: "file",
                       file: nextFile,
                       original: current.original || current.file || null,

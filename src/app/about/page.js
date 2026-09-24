@@ -38,7 +38,7 @@ const PILLARS = [
 export default function AboutPage() {
   return (
     <main className="min-h-screen bg-stone-50/60">
-      <div className="mx-auto max-w-6xl px-6 py-12 sm:px-8 sm:py-16">
+      <div className="mx-auto max-w-6xl px-6 py-12 sm:px-8 sm:py-16 2xl:max-w-page-inset">
         <FadeIn>
           <span className="inline-block rounded-full bg-stone-200/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-stone-700">
             About AlliedRooms

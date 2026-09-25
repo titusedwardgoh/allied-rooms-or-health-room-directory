@@ -3,9 +3,59 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { Search, X } from "lucide-react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { DAY_LABEL, ROOM_TYPE_LABEL } from "@/lib/format";
+
+const SEARCH_DELAY_MS = 1100;
+
+const dotVariants = {
+  pulse: {
+    scale: [1, 1.5, 1],
+    transition: {
+      duration: 1.2,
+      repeat: Infinity,
+      ease: "easeInOut",
+    },
+  },
+};
+
+function SearchPulseOverlay() {
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[90] flex flex-col items-center justify-center gap-5 bg-white/70 backdrop-blur-md"
+      role="status"
+      aria-live="polite"
+      aria-label="Finding rooms"
+    >
+      <motion.div
+        className="flex items-center justify-center gap-5"
+        animate="pulse"
+        transition={{ staggerChildren: 0.2, staggerDirection: -1 }}
+      >
+        <motion.div
+          className="size-5 rounded-full bg-teal-900 will-change-transform"
+          variants={dotVariants}
+        />
+        <motion.div
+          className="size-5 rounded-full bg-teal-900 will-change-transform"
+          variants={dotVariants}
+        />
+        <motion.div
+          className="size-5 rounded-full bg-teal-900 will-change-transform"
+          variants={dotVariants}
+        />
+      </motion.div>
+      <p className="text-xs font-bold uppercase tracking-wider text-stone-500">
+        Finding rooms
+      </p>
+    </div>,
+    document.body,
+  );
+}
 
 const DAY_INITIAL = {
   mon: "M",
@@ -56,7 +106,7 @@ function dividerClass(active) {
 
 function DayPicker({ selectedDays, onToggle }) {
   return (
-    <div className="flex items-center gap-1">
+    <div className="grid w-full grid-cols-7">
       {Object.entries(DAY_INITIAL).map(([key, initial]) => {
         const selected = selectedDays.includes(key);
         return (
@@ -66,7 +116,7 @@ function DayPicker({ selectedDays, onToggle }) {
             aria-pressed={selected}
             aria-label={DAY_LABEL[key]}
             onClick={() => onToggle(key)}
-            className={`flex aspect-square min-w-0 flex-1 cursor-pointer items-center justify-center rounded-full text-sm font-bold transition-colors sm:max-w-8 sm:text-xs ${
+            className={`mx-auto flex size-8 cursor-pointer items-center justify-center rounded-full text-sm font-bold transition-colors sm:text-xs ${
               selected
                 ? "bg-stone-900 text-white"
                 : "bg-stone-100 text-stone-500 hover:bg-stone-200 hover:text-stone-700"
@@ -114,6 +164,8 @@ export default function SearchBar({
   const [selectedDays, setSelectedDays] = useState(days);
   const [active, setActive] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const searchTimerRef = useRef(null);
 
   function openPanel(id, el) {
     const form = formRef.current;
@@ -141,6 +193,8 @@ export default function SearchBar({
 
   function handleSearch(e) {
     e.preventDefault();
+    if (searching) return;
+
     const params = new URLSearchParams();
 
     if (inputSuburb.trim()) params.set("suburb", inputSuburb.trim());
@@ -150,8 +204,17 @@ export default function SearchBar({
 
     setActive(null);
     setMobileOpen(false);
-    router.push(`/rooms?${params.toString()}`);
+    setSearching(true);
+    window.clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = window.setTimeout(() => {
+      router.push(`/rooms?${params.toString()}`);
+      setSearching(false);
+    }, SEARCH_DELAY_MS);
   }
+
+  useEffect(() => {
+    return () => window.clearTimeout(searchTimerRef.current);
+  }, []);
 
   useEffect(() => {
     function onPointerDown(event) {
@@ -395,8 +458,9 @@ export default function SearchBar({
 
           <button
             type="submit"
-            className="m-2 grid size-12 shrink-0 cursor-pointer place-items-center self-end rounded-full bg-teal-900 text-white transition-all hover:bg-teal-950 active:scale-[0.98] sm:absolute sm:right-4 sm:top-1/2 sm:z-20 sm:m-0 sm:-translate-y-1/2 sm:self-auto"
+            className="m-2 grid size-12 shrink-0 cursor-pointer place-items-center self-end rounded-full bg-teal-900 text-white transition-all hover:bg-teal-950 active:scale-[0.98] disabled:opacity-70 sm:absolute sm:right-4 sm:top-1/2 sm:z-20 sm:m-0 sm:-translate-y-1/2 sm:self-auto"
             aria-label="Search"
+            disabled={searching}
           >
             <Search className="size-5" strokeWidth={2.25} />
           </button>
@@ -435,6 +499,7 @@ export default function SearchBar({
       </form>
 
       {overlay}
+      {searching ? <SearchPulseOverlay /> : null}
     </>
   );
 }

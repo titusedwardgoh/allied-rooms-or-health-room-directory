@@ -11,7 +11,8 @@ export function toAuPhoneDigits(value) {
 }
 
 export function isAuPhone(value) {
-  return /^(?:02|03|04|07|08)\d{8}$/.test(toAuPhoneDigits(value));
+  const digits = toAuPhoneDigits(value);
+  return /^(?:(?:02|03|04|07|08)\d{8}|1300\d{6})$/.test(digits);
 }
 
 export function isEmail(value) {

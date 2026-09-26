@@ -3,59 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { Search, X } from "lucide-react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
+import PulseOverlay from "@/components/PulseOverlay";
 import { DAY_LABEL, ROOM_TYPE_LABEL } from "@/lib/format";
 
 const SEARCH_DELAY_MS = 1100;
-
-const dotVariants = {
-  pulse: {
-    scale: [1, 1.5, 1],
-    transition: {
-      duration: 1.2,
-      repeat: Infinity,
-      ease: "easeInOut",
-    },
-  },
-};
-
-function SearchPulseOverlay() {
-  if (typeof document === "undefined") return null;
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[90] flex flex-col items-center justify-center gap-5 bg-white/70 backdrop-blur-md"
-      role="status"
-      aria-live="polite"
-      aria-label="Finding rooms"
-    >
-      <motion.div
-        className="flex items-center justify-center gap-5"
-        animate="pulse"
-        transition={{ staggerChildren: 0.2, staggerDirection: -1 }}
-      >
-        <motion.div
-          className="size-5 rounded-full bg-teal-900 will-change-transform"
-          variants={dotVariants}
-        />
-        <motion.div
-          className="size-5 rounded-full bg-teal-900 will-change-transform"
-          variants={dotVariants}
-        />
-        <motion.div
-          className="size-5 rounded-full bg-teal-900 will-change-transform"
-          variants={dotVariants}
-        />
-      </motion.div>
-      <p className="text-xs font-bold uppercase tracking-wider text-stone-500">
-        Finding rooms
-      </p>
-    </div>,
-    document.body,
-  );
-}
 
 const DAY_INITIAL = {
   mon: "M",
@@ -499,7 +452,7 @@ export default function SearchBar({
       </form>
 
       {overlay}
-      {searching ? <SearchPulseOverlay /> : null}
+      {searching ? <PulseOverlay label="Finding rooms" /> : null}
     </>
   );
 }

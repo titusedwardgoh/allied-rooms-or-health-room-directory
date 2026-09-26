@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Check, Copy, Loader2 } from "lucide-react";
+import { Check, Copy } from "lucide-react";
+import PulseOverlay from "@/components/PulseOverlay";
 
-const PUBLISH_DELAY_MS = 800;
+const PUBLISH_DELAY_MS = 1100;
 const PUBLISHED_KEY = "alliedrooms:just-published";
 
 function readJustPublished(slug) {
@@ -124,7 +125,7 @@ export default function PublishListingBar({ slug, editHref, isDraft }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-stone-900/40 px-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-900/40 px-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="publish-success-title"
@@ -219,14 +220,7 @@ export default function PublishListingBar({ slug, editHref, isDraft }) {
                 disabled={isPublishing}
                 className="inline-flex min-w-44 cursor-pointer items-center justify-center gap-2 rounded-full bg-stone-900 px-4 py-2 text-sm font-semibold text-white hover:bg-stone-800 disabled:cursor-wait disabled:opacity-80"
               >
-                {isPublishing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                    Publishing listing...
-                  </>
-                ) : (
-                  "Publish listing"
-                )}
+                {isPublishing ? "Publishing listing..." : "Publish listing"}
               </button>
             </div>
           </div>
@@ -241,6 +235,7 @@ export default function PublishListingBar({ slug, editHref, isDraft }) {
         </div>
       ) : null}
       {mounted && modal ? createPortal(modal, document.body) : modal}
+      {isPublishing ? <PulseOverlay label="Publishing listing" /> : null}
     </>
   );
 }

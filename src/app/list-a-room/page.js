@@ -32,6 +32,7 @@ import AddressAutocomplete from "@/components/AddressAutocomplete";
 import RoomGallery from "@/components/RoomGallery";
 import { fileToDataUrl, ensurePhotoFile } from "@/lib/cropImage";
 import { ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
+import PulseOverlay from "@/components/PulseOverlay";
 import { FadeIn } from "@/components/FadeIn";
 import {
   LeaveListingModal,
@@ -226,6 +227,7 @@ export default function ListARoomPage() {
   const [photoError, setPhotoError] = useState("");
   const [state, formAction, pending] = useActionState(createRoomListing, null);
   const [advancing, setAdvancing] = useState(false);
+  const [savingPreview, setSavingPreview] = useState(false);
   const [editReady, setEditReady] = useState(!searchParams.get("edit"));
   const [editMissing, setEditMissing] = useState(false);
   const fileInputRef = useRef(null);
@@ -508,6 +510,10 @@ export default function ListARoomPage() {
     if (pending) allowLeaveRef.current = true;
   }, [pending]);
 
+  useEffect(() => {
+    if (state?.error) setSavingPreview(false);
+  }, [state]);
+
   const leaveGuard = useLeaveListingGuard({
     active: hasProgress && !pending && editReady,
     allowLeaveRef,
@@ -673,7 +679,7 @@ export default function ListARoomPage() {
                   placeholder="03 9000 0000"
                 />
                 <span className="mt-1.5 block text-xs text-stone-400">
-                  10 digits, starting with 02, 03, 04, 07 or 08.
+                  10 digits, starting with 02, 03, 04, 07, 08 or 1300.
                 </span>
               </Field>
               <Field label="Website" optional>
@@ -1240,7 +1246,7 @@ export default function ListARoomPage() {
                 <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
                   About the space
                 </p>
-                <p className="mt-2 min-w-0 max-w-full overflow-hidden whitespace-pre-wrap break-all text-sm leading-relaxed text-stone-600">
+                <p className="mt-2 min-w-0 whitespace-pre-wrap break-words text-sm leading-relaxed text-stone-600">
                   {values.description || "No description yet."}
                 </p>
               </div>
@@ -1276,7 +1282,7 @@ export default function ListARoomPage() {
               <button
                 key="publish"
                 type="button"
-                disabled={pending}
+                disabled={pending || savingPreview}
                 onClick={(event) => {
                   const error = validateStep(3);
                   if (error) {
@@ -1284,11 +1290,16 @@ export default function ListARoomPage() {
                     return;
                   }
                   setStepError("");
+                  setSavingPreview(true);
                   event.currentTarget.form?.requestSubmit();
                 }}
                 className="rounded-full cursor-pointer bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-950 disabled:opacity-60"
               >
-                {pending ? "Saving preview…" : editSlug ? "Save changes" : "Save preview"}
+                {pending || savingPreview
+                  ? "Saving preview…"
+                  : editSlug
+                    ? "Save changes"
+                    : "Save preview"}
               </button>
             )}
           </div>
@@ -1374,6 +1385,12 @@ export default function ListARoomPage() {
             );
             setEditingIndex(null);
           }}
+        />
+      ) : null}
+
+      {pending || savingPreview ? (
+        <PulseOverlay
+          label={editSlug ? "Saving changes" : "Saving preview"}
         />
       ) : null}
     </main>

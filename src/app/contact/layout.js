@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Contact — AlliedRooms",
+  title: "Contact",
   description:
     "Get in touch with AlliedRooms about listing a room, finding a space, or a general enquiry.",
 };

@@ -18,10 +18,10 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const room = await getRoomBySlug(slug);
-  if (!room) return { title: "Room — AlliedRooms" };
+  if (!room) return { title: "Room" };
 
   return {
-    title: `${room.title} — AlliedRooms`,
+    title: room.title,
     robots: room.is_published ? undefined : { index: false, follow: false },
   };
 }

@@ -18,8 +18,7 @@ export default function RoomCard({ room }) {
           <FitImage
             src={room.image_urls[0]}
             alt={room.title}
-            className="h-full w-full transition-transform duration-300"
-            coverClassName="group-hover:scale-105"
+            className="h-full w-full transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
           <RoomPlaceholder roomType={room.room_type} />

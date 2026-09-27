@@ -2,6 +2,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import { MotionProvider } from "@/components/FadeIn";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -11,13 +12,23 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata = {
-  title: "AlliedRooms — Sessional allied health rooms",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "AlliedRooms — Sessional allied health rooms",
+    template: "%s | AlliedRooms",
+  },
   description:
     "Find a consulting room by suburb, day, and rate. Peer-to-peer directory for allied health and therapy rooms across Melbourne.",
+  openGraph: {
+    title: "AlliedRooms — Sessional allied health rooms",
+    description:
+      "Find a consulting room by suburb, day, and rate across Melbourne.",
+    siteName: "AlliedRooms",
+    locale: "en_AU",
+    type: "website",
+  },
   icons: {
-    icon: [
-      { url: "/favicon.png?v=3", type: "image/png", sizes: "32x32" },
-    ],
+    icon: [{ url: "/favicon.png?v=3", type: "image/png", sizes: "32x32" }],
     apple: "/apple-icon.png",
   },
 };

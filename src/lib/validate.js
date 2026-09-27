@@ -81,8 +81,8 @@ export function practiceDetailsError({ practiceName, contactEmail, phone, websit
   if (!isEmail(contactEmail)) {
     return "Enter a valid contact email, such as hello@clinic.com.au.";
   }
-  if (!isAuPhone(phone)) {
-    return "Enter a valid 10 digit Australian number.";
+  if (phone.trim() && !isAuPhone(phone)) {
+    return "Enter a valid 10 digit Australian number, or leave it blank.";
   }
   const website = String(websiteUrl ?? "").trim();
   if (website && !/^https?:\/\/$/i.test(website) && !isWebsiteUrl(website)) {

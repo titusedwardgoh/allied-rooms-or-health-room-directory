@@ -1,15 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const SUBURB_IMAGES = {
-  Richmond: "/hubs/richmond.jpg",
-  "South Yarra": "/hubs/south-yarra.jpg",
-  Fitzroy: "/hubs/fitzroy.jpg",
-  Hawthorn: "/hubs/hawthorn.jpg",
-  Brunswick: "/hubs/brunswick.jpg",
-};
-
 export default function SuburbBento({ stats }) {
+  if (!stats?.length) return null;
+
   return (
     <div
       role="region"
@@ -18,7 +12,6 @@ export default function SuburbBento({ stats }) {
     >
       {stats.map((item, idx) => {
         const isFeatured = idx === 0;
-        const bgImage = SUBURB_IMAGES[item.suburb] || SUBURB_IMAGES.Richmond;
 
         return (
           <Link
@@ -31,7 +24,7 @@ export default function SuburbBento({ stats }) {
             }`}
           >
             <Image
-              src={bgImage}
+              src={item.image}
               alt=""
               fill
               sizes={
@@ -45,9 +38,11 @@ export default function SuburbBento({ stats }) {
 
             <div className="relative z-10 flex h-full flex-col justify-between text-white [text-shadow:0_1px_8px_rgb(0_0_0_/_0.45)]">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300">
-                  {item.tag}
-                </span>
+                {item.tag ? (
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300">
+                    {item.tag}
+                  </span>
+                ) : null}
                 <h3 className="mt-1 font-sans text-2xl font-bold sm:text-3xl">
                   {item.suburb}
                 </h3>

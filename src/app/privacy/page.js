@@ -3,7 +3,7 @@ import { FadeIn } from "@/components/FadeIn";
 import { CONTACT_EMAIL } from "@/lib/contact";
 
 export const metadata = {
-  title: "Privacy Policy — AlliedRooms",
+  title: "Privacy Policy",
   description: "How AlliedRooms handles contact details and listing information.",
 };
 

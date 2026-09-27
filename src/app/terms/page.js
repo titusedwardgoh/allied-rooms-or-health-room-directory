@@ -2,7 +2,7 @@ import Link from "next/link";
 import { FadeIn } from "@/components/FadeIn";
 
 export const metadata = {
-  title: "Terms — AlliedRooms",
+  title: "Terms",
   description:
     "Terms of use for the AlliedRooms sessional room directory.",
 };

@@ -1,4 +1,5 @@
 import { matchesRoomTypeFilter, slugify } from "@/lib/format";
+import { suburbStatsFromRooms } from "@/lib/hubs";
 import { mockRooms } from "@/lib/mockData";
 import {
   createSupabaseAdminClient,
@@ -22,14 +23,6 @@ async function queryRooms(run) {
   }
   return { data: null, error: lastError };
 }
-
-const HUBS = [
-  { suburb: "Richmond", tag: "Inner East" },
-  { suburb: "South Yarra", tag: "Metro" },
-  { suburb: "Fitzroy", tag: "Inner North" },
-  { suburb: "Hawthorn", tag: "East" },
-  { suburb: "Brunswick", tag: "North" },
-];
 
 function normalizeDays(days) {
   if (!days) return [];
@@ -72,16 +65,7 @@ function normalizeRoom(row) {
 }
 
 function statsFromRooms(rooms) {
-  const counts = {};
-  rooms.forEach((r) => {
-    if (!r.is_published) return;
-    counts[r.suburb] = (counts[r.suburb] || 0) + 1;
-  });
-  return HUBS.map(({ suburb, tag }) => ({
-    suburb,
-    tag,
-    count: counts[suburb] || 0,
-  }));
+  return suburbStatsFromRooms(rooms);
 }
 
 function applyRoomFilters(query, filters = {}) {

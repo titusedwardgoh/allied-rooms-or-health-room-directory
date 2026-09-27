@@ -668,7 +668,7 @@ export default function ListARoomPage() {
                   We may follow up if you start a listing and don’t finish.
                 </span>
               </Field>
-              <Field label="Phone number" required>
+              <Field label="Phone number" optional>
                 <input
                   name="phone"
                   inputMode="tel"
@@ -679,7 +679,7 @@ export default function ListARoomPage() {
                   placeholder="03 9000 0000"
                 />
                 <span className="mt-1.5 block text-xs text-stone-400">
-                  10 digits, starting with 02, 03, 04, 07, 08 or 1300.
+                  10 digits, starting with 02, 03, 04, 07, 08 or 1300. Leave blank if you prefer email.
                 </span>
               </Field>
               <Field label="Website" optional>

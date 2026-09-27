@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 
 export const metadata = {
-  title: "List a Room — AlliedRooms",
+  title: "List a Room",
   description:
     "Publish a sessional allied health consulting room with a public day rate.",
 };

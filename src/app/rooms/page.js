@@ -6,6 +6,12 @@ import { getPublishedRooms } from "@/lib/db/rooms";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "Find a Room",
+  description:
+    "Browse sessional allied health consulting rooms across Melbourne by suburb, day, and daily rate.",
+};
+
 function toDayArray(day) {
   if (!day) return [];
   return Array.isArray(day) ? day : [day];

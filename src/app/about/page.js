@@ -3,7 +3,7 @@ import { CalendarOff, CircleDollarSign, MessagesSquare } from "lucide-react";
 import { FadeIn, FadeInOnView, Stagger, StaggerItem } from "@/components/FadeIn";
 
 export const metadata = {
-  title: "About — AlliedRooms",
+  title: "About",
   description:
     "AlliedRooms connects Melbourne health practitioners with sessional consulting rooms — clear daily rates, zero long leases, direct host contact.",
 };

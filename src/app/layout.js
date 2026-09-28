@@ -3,6 +3,7 @@ import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import { MotionProvider } from "@/components/FadeIn";
 import { SITE_URL } from "@/lib/site";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -42,6 +43,7 @@ export default function RootLayout({ children }) {
           {children}
           <Footer />
         </MotionProvider>
+        <Analytics />
       </body>
     </html>
   );

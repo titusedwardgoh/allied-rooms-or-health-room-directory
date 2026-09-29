@@ -37,6 +37,13 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en-AU" className={plusJakarta.variable}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(location.pathname!=="/rooms"||!location.search)return;var n=performance.getEntriesByType("navigation")[0];if(n&&n.type==="reload")location.replace(location.pathname);}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-paper font-sans text-stone-900 antialiased">
         <MotionProvider>
           <SiteHeader />

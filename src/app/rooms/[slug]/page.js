@@ -9,6 +9,7 @@ import {
   visibleAmenities,
 } from "@/lib/format";
 import RoomGallery from "@/components/RoomGallery";
+import BackButton from "@/components/BackButton";
 import { FadeIn } from "@/components/FadeIn";
 import ScrollToTop from "@/components/ScrollToTop";
 import PublishListingBar from "@/components/PublishListingBar";
@@ -57,6 +58,7 @@ Sent via AlliedRooms`;
         editHref={`/list-a-room?edit=${encodeURIComponent(room.slug)}`}
       />
       <main className="mx-auto max-w-6xl px-6 py-10 sm:px-8 2xl:max-w-page-inset">
+      <BackButton />
       <div className="grid min-w-0 grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_360px]">
         <FadeIn className="min-w-0">
           <RoomGallery

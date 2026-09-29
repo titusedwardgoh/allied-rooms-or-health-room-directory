@@ -105,6 +105,7 @@ export default function SearchBar({
   roomType = "",
   days = [],
   maxPrice = "",
+  sort = "newest",
 }) {
   const router = useRouter();
   const formRef = useRef(null);
@@ -153,6 +154,7 @@ export default function SearchBar({
     if (inputSuburb.trim()) params.set("suburb", inputSuburb.trim());
     if (selectedType) params.set("type", selectedType);
     if (maxPrice) params.set("max", maxPrice);
+    if (sort && sort !== "newest") params.set("sort", sort);
     selectedDays.forEach((d) => d && params.append("day", d));
 
     setActive(null);

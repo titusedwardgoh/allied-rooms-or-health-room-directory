@@ -1,8 +1,11 @@
 import Link from "next/link";
+import MarkListingOrigin from "@/components/MarkListingOrigin";
 import RoomCard from "@/components/RoomCard";
+import RoomSortSelect from "@/components/RoomSortSelect";
 import SearchBar from "@/components/SearchBar";
 import { FadeIn, Stagger, StaggerItem } from "@/components/FadeIn";
 import { getPublishedRooms } from "@/lib/db/rooms";
+import { parseRoomSort, sortPublishedRooms } from "@/lib/roomsSort";
 
 export const dynamic = "force-dynamic";
 
@@ -23,10 +26,15 @@ export default async function RoomsPage({ searchParams }) {
   const type = params.type ?? "";
   const days = toDayArray(params.day);
   const max = params.max ?? "";
-  const rooms = await getPublishedRooms({ suburb, type, days, max });
+  const sort = parseRoomSort(params.sort);
+  const rooms = sortPublishedRooms(
+    await getPublishedRooms({ suburb, type, days, max }),
+    sort,
+  );
 
   return (
     <main className="min-h-screen bg-stone-50">
+      <MarkListingOrigin from="search" />
       <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8 2xl:max-w-page-inset">
         <FadeIn>
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
@@ -35,10 +43,6 @@ export default async function RoomsPage({ searchParams }) {
           <h1 className="mt-2 font-display text-4xl font-bold text-stone-900">
             Find a Room
           </h1>
-          <p className="mt-2 text-stone-600">
-            {rooms.length} {rooms.length === 1 ? "room" : "rooms"}
-            {suburb ? ` in ${suburb}` : " across Melbourne"}
-          </p>
         </FadeIn>
 
         <FadeIn delay={0.1} className="mt-8">
@@ -47,10 +51,19 @@ export default async function RoomsPage({ searchParams }) {
             roomType={type}
             days={days}
             maxPrice={max}
+            sort={sort}
           />
         </FadeIn>
 
-        <div className="mt-10">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 mb-6">
+          <p className="text-sm font-medium text-stone-500">
+            {rooms.length} {rooms.length === 1 ? "room" : "rooms"}
+            {suburb ? ` in ${suburb}` : " across Melbourne"}
+          </p>
+          {rooms.length > 0 ? <RoomSortSelect /> : null}
+        </div>
+
+        <div>
           {rooms.length === 0 ? (
             <FadeIn delay={0.16}>
               <div className="rounded-2xl border border-stone-200 bg-white p-10 text-center">

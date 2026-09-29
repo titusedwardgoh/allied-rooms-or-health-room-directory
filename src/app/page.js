@@ -1,6 +1,7 @@
 import Link from "next/link";
 import SearchBar from "@/components/SearchBar";
 import RoomCard from "@/components/RoomCard";
+import MarkListingOrigin from "@/components/MarkListingOrigin";
 import SuburbBento from "@/components/SuburbBento";
 import { FadeIn, FadeInOnView, Stagger, StaggerItem } from "@/components/FadeIn";
 import { getFeaturedRooms, getSuburbStats } from "@/lib/db/rooms";
@@ -13,6 +14,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-stone-50">
+      <MarkListingOrigin from="home" />
       <section className="relative px-6 pb-6 pt-12 sm:px-8 sm:pb-12 sm:pt-24 2xl:pt-32">
         <div className="mx-auto max-w-6xl text-center 2xl:max-w-page">
           <FadeIn>

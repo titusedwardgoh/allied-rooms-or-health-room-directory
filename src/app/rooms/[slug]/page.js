@@ -37,7 +37,7 @@ export default async function RoomDetailPage({ params }) {
   const isDraft = room.is_published === false;
   const inquiryMessage = `Hi ${host.practice_name || "there"},
 
-I noticed your consulting room "${room.title}" listed on AlliedRooms for ${pricePerDayLabel(
+I noticed your consulting room ${room.title} listed on AlliedRooms for ${pricePerDayLabel(
     room.price_per_day_cents,
   )}.
 

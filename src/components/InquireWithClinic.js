@@ -84,10 +84,9 @@ export default function InquireWithClinic({ slug, initialMessage }) {
         <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-teal-900 text-white">
           <Check className="h-5 w-5" aria-hidden="true" />
         </div>
-        <p className="mt-3 text-sm font-semibold text-stone-900">Inquiry sent</p>
+        <p className="mt-3 text-sm font-semibold text-stone-900">Message sent!</p>
         <p className="mt-1 text-xs leading-relaxed text-stone-600">
-          The clinic will reply to {values.email.trim()} if they can offer the
-          days you need.
+          The host will reply you directly at {values.email.trim()}. Please check your email for a reply.
         </p>
       </div>
     );

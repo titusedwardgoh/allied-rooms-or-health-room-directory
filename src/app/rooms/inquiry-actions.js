@@ -1,10 +1,13 @@
 "use server";
 
+import { createElement } from "react";
+import { render } from "@react-email/render";
 import { Resend } from "resend";
+import HostInquiryEmail from "@/emails/HostInquiryEmail";
+import UserConfirmationEmail from "@/emails/UserConfirmationEmail";
 import { logInquiry, markInquiry } from "@/lib/db/inquiries";
 import { getRoomBySlug } from "@/lib/db/rooms";
-import { escapeHtml } from "@/lib/html";
-import { MAIL_FROM } from "@/lib/site";
+import { MAIL_FROM, SITE_URL } from "@/lib/site";
 import { isEmail } from "@/lib/validate";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -41,6 +44,7 @@ export async function sendListingInquiry(payload) {
   const room = await getRoomBySlug(slug);
   const host = room?.host ?? {};
   const hostEmail = String(host.contact_email ?? "").trim();
+  const clinicName = String(host.practice_name ?? "").trim() || "the clinic";
 
   if (!room || room.is_published === false) {
     return { ok: false, error: "This listing is not available." };
@@ -70,41 +74,36 @@ export async function sendListingInquiry(payload) {
     status: "pending",
   });
 
-  const lines = [
+  const listingUrl = `${SITE_URL}/rooms/${room.slug}`;
+  const textBody = [
     "New inquiry via AlliedRooms",
     "",
     `Listing: ${room.title}`,
     `From: ${name}`,
     `Email: ${email}`,
-  ];
-  if (phone) lines.push(`Phone: ${phone}`);
-  lines.push("", "Message:", message);
-  const textBody = lines.join("\n");
-
-  const htmlBody = `
-    <div style="font-family: ui-sans-serif, system-ui, sans-serif; color: #1c1917; line-height: 1.6;">
-      <h1 style="font-size: 18px; margin: 0 0 16px;">New listing inquiry</h1>
-      <p style="margin: 0 0 8px;"><strong>Listing:</strong> ${escapeHtml(room.title)}</p>
-      <p style="margin: 0 0 8px;"><strong>From:</strong> ${escapeHtml(name)}</p>
-      <p style="margin: 0 0 8px;"><strong>Email:</strong> ${escapeHtml(email)}</p>
-      ${
-        phone
-          ? `<p style="margin: 0 0 16px;"><strong>Phone:</strong> ${escapeHtml(phone)}</p>`
-          : ""
-      }
-      <p style="margin: 16px 0 8px;"><strong>Message:</strong></p>
-      <p style="margin: 0; white-space: pre-wrap;">${escapeHtml(message)}</p>
-    </div>
-  `;
+    ...(phone ? [`Phone: ${phone}`] : []),
+    "",
+    "Message:",
+    message,
+  ].join("\n");
 
   try {
+    const html = await render(
+      createElement(HostInquiryEmail, {
+        roomTitle: room.title,
+        senderName: name,
+        senderEmail: email,
+        senderPhone: phone,
+        message,
+      }),
+    );
     const { error } = await resend.emails.send({
       from: MAIL_FROM,
       to: [hostEmail],
       replyTo: email,
       subject: `Inquiry — ${room.title} via AlliedRooms`,
       text: textBody,
-      html: htmlBody,
+      html,
     });
 
     if (error) {
@@ -114,10 +113,67 @@ export async function sendListingInquiry(payload) {
     }
 
     await markInquiry(inquiryId, "sent");
+    await sendInquiryConfirmation({
+      name,
+      email,
+      clinicName,
+      hostEmail,
+      listingTitle: room.title,
+      listingUrl,
+    });
     return { ok: true };
   } catch (error) {
     console.error("Resend API Error:", error);
     await markInquiry(inquiryId, "failed");
     return { ok: false, error: "Couldn't send right now. Please try again." };
+  }
+}
+
+async function sendInquiryConfirmation({
+  name,
+  email,
+  clinicName,
+  hostEmail,
+  listingTitle,
+  listingUrl,
+}) {
+  const text = [
+    `Hi ${name},`,
+    "",
+    `Your inquiry about "${listingTitle}" has been sent to ${clinicName}.`,
+    "",
+    "You can also email the clinic directly:",
+    hostEmail,
+    "",
+    listingUrl ? `View listing: ${listingUrl}` : null,
+    listingUrl ? "" : null,
+    "Sent via AlliedRooms",
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+
+  try {
+    const html = await render(
+      createElement(UserConfirmationEmail, {
+        senderName: name,
+        roomTitle: listingTitle,
+        practiceName: clinicName,
+        hostEmail,
+        listingUrl,
+      }),
+    );
+    const { error } = await resend.emails.send({
+      from: MAIL_FROM,
+      to: [email],
+      replyTo: hostEmail,
+      subject: `Your inquiry was sent to ${clinicName}`,
+      text,
+      html,
+    });
+    if (error) {
+      console.error("Resend confirmation email error:", error);
+    }
+  } catch (error) {
+    console.error("Resend confirmation email error:", error);
   }
 }

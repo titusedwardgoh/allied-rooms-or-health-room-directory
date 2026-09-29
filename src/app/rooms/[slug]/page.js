@@ -12,6 +12,7 @@ import RoomGallery from "@/components/RoomGallery";
 import { FadeIn } from "@/components/FadeIn";
 import ScrollToTop from "@/components/ScrollToTop";
 import PublishListingBar from "@/components/PublishListingBar";
+import InquireWithClinic from "@/components/InquireWithClinic";
 
 export const dynamic = "force-dynamic";
 
@@ -34,15 +35,18 @@ export default async function RoomDetailPage({ params }) {
 
   const host = room.host ?? {};
   const isDraft = room.is_published === false;
+  const inquiryMessage = `Hi ${host.practice_name || "there"},
 
-  const mailtoSubject = encodeURIComponent(
-    `Inquiry — ${room.title} (${room.suburb}) via AlliedRooms`,
-  );
-  const mailtoBody = encodeURIComponent(
-    `Hi ${host.practice_name || "there"},\n\nI noticed your consulting room "${room.title}" listed on AlliedRooms for ${pricePerDayLabel(
-      room.price_per_day_cents,
-    )}.\n\nI am interested in leasing this space for sessional use.\n\nDays I am looking for:\nAbout my practice:\n\nSent via AlliedRooms`,
-  );
+I noticed your consulting room "${room.title}" listed on AlliedRooms for ${pricePerDayLabel(
+    room.price_per_day_cents,
+  )}.
+
+I am interested in leasing this space for sessional use.
+
+Days I am looking for:
+About my practice:
+
+Sent via AlliedRooms`;
 
   return (
     <>
@@ -129,12 +133,16 @@ export default async function RoomDetailPage({ params }) {
               </div>
             </div>
 
-            <a
-              href={`mailto:${host.contact_email || ""}?subject=${mailtoSubject}&body=${mailtoBody}`}
-              className="mt-4 block w-full rounded-full bg-teal-900 py-3 text-center text-sm font-semibold text-white transition-transform hover:bg-teal-950 active:scale-95"
-            >
-              Inquire with Clinic
-            </a>
+            {isDraft ? (
+              <p className="mt-4 text-center text-sm text-stone-500">
+                Publish this listing to receive inquiries.
+              </p>
+            ) : (
+              <InquireWithClinic
+                slug={room.slug}
+                initialMessage={inquiryMessage}
+              />
+            )}
           </div>
         </FadeIn>
       </div>

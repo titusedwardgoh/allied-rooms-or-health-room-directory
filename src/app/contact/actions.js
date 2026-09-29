@@ -2,6 +2,9 @@
 
 import { Resend } from "resend";
 import { CONTACT_EMAIL, CONTACT_TOPICS } from "@/lib/contact";
+import { MAIL_FROM } from "@/lib/site";
+import { logInquiry, markInquiry } from "@/lib/db/inquiries";
+import { escapeHtml } from "@/lib/html";
 import { isEmail } from "@/lib/validate";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -9,14 +12,6 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const TOPIC_SET = new Set(CONTACT_TOPICS);
 const MAX_NAME = 120;
 const MAX_MESSAGE = 5000;
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
-}
 
 export async function sendContactMessage(payload) {
   const name = String(payload?.name ?? "").trim();
@@ -49,6 +44,20 @@ export async function sendContactMessage(payload) {
   }
 
   const to = process.env.CONTACT_FORM_TO_EMAIL || CONTACT_EMAIL;
+  const inquiryId = await logInquiry({
+    source: "contact",
+    room_id: null,
+    room_title: topic,
+    room_slug: null,
+    host_email: to,
+    sender_name: name,
+    sender_email: email,
+    sender_phone: null,
+    topic,
+    message,
+    status: "pending",
+  });
+
   const textBody = [
     "New AlliedRooms enquiry",
     "",
@@ -72,7 +81,7 @@ export async function sendContactMessage(payload) {
 
   try {
     const { error } = await resend.emails.send({
-      from: "AlliedRooms Contact <onboarding@resend.dev>",
+      from: MAIL_FROM,
       to: [to],
       replyTo: email,
       subject: `New AlliedRooms Enquiry: ${topic} from ${name}`,
@@ -82,15 +91,18 @@ export async function sendContactMessage(payload) {
 
     if (error) {
       console.error("Resend API Error:", error);
+      await markInquiry(inquiryId, "failed");
       return {
         ok: false,
         error: `Couldn't send right now. Email us at ${CONTACT_EMAIL}.`,
       };
     }
 
+    await markInquiry(inquiryId, "sent");
     return { ok: true };
   } catch (error) {
     console.error("Resend API Error:", error);
+    await markInquiry(inquiryId, "failed");
     return {
       ok: false,
       error: `Couldn't send right now. Email us at ${CONTACT_EMAIL}.`,

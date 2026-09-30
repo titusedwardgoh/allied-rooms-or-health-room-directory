@@ -13,6 +13,7 @@ import {
   amenityLabel,
   customAmenityError,
   customRoomTypeError,
+  listingTitle,
   normalizeCustomAmenity,
   pricePerDayLabel,
   roomTypeLabel,
@@ -21,10 +22,15 @@ import {
 import { captureListingLead, createRoomListing, getListingForEdit } from "./actions";
 import {
   addressLineError,
+  clampText,
+  MAX_DESCRIPTION_CHARS,
   MAX_PRICE_PER_DAY_DOLLARS,
+  MIN_DESCRIPTION_CHARS,
   dailyRateError,
   lettersRequiredError,
+  normalizeNewlines,
   practiceDetailsError,
+  textLength,
 } from "@/lib/validate";
 import FitImage from "@/components/FitImage";
 import PhotoCropModal from "@/components/PhotoCropModal";
@@ -223,6 +229,7 @@ export default function ListARoomPage() {
   const [dragIndex, setDragIndex] = useState(null);
   const [overIndex, setOverIndex] = useState(null);
   const [stepError, setStepError] = useState("");
+  const [hideActionError, setHideActionError] = useState(false);
   const [stepBlockedMessage, setStepBlockedMessage] = useState("");
   const [photoError, setPhotoError] = useState("");
   const [state, formAction, pending] = useActionState(createRoomListing, null);
@@ -271,7 +278,10 @@ export default function ListARoomPage() {
         setEditReady(true);
         return;
       }
-      setValues(listing.values);
+      setValues({
+        ...listing.values,
+        description: normalizeNewlines(listing.values.description ?? ""),
+      });
       setGallery(
         (listing.imageUrls || []).map((src) => ({
           id: createPhotoId(),
@@ -288,10 +298,14 @@ export default function ListARoomPage() {
   }, [editSlug]);
 
   function update(name, value) {
+    setStepError("");
+    setHideActionError(true);
     setValues((current) => ({ ...current, [name]: value }));
   }
 
   function toggleList(name, key) {
+    setStepError("");
+    setHideActionError(true);
     setValues((current) => {
       const list = current[name];
       return {
@@ -394,16 +408,17 @@ export default function ListARoomPage() {
         required: values.amenities.includes("other"),
       });
       if (otherError) return otherError;
-      if (!values.description.trim() || values.description.trim().length < 30) {
-        return "Description must be at least 30 characters long.";
+      const description = normalizeNewlines(values.description).trim();
+      if (!description || description.length < MIN_DESCRIPTION_CHARS) {
+        return `Description must be at least ${MIN_DESCRIPTION_CHARS} characters long.`;
       }
       const descriptionLettersError = lettersRequiredError(
-        values.description,
+        description,
         "Description",
       );
       if (descriptionLettersError) return descriptionLettersError;
-      if (values.description.trim().length > 1500) {
-        return "Description must be 1500 characters or fewer.";
+      if (description.length > MAX_DESCRIPTION_CHARS) {
+        return `Description must be ${MAX_DESCRIPTION_CHARS} characters or fewer.`;
       }
     }
     if (currentStep === 3) {
@@ -499,7 +514,19 @@ export default function ListARoomPage() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [stepBlockedMessage]);
 
-  const actionError = actionErrorMessage(state);
+  const DESCRIPTION_LIMIT_ERROR = `Description must be ${MAX_DESCRIPTION_CHARS} characters or fewer.`;
+  const descriptionOverLimit =
+    normalizeNewlines(values.description).trim().length >
+    MAX_DESCRIPTION_CHARS;
+  const actionError = hideActionError ? "" : actionErrorMessage(state);
+  const shownStepError =
+    stepError === DESCRIPTION_LIMIT_ERROR && !descriptionOverLimit
+      ? ""
+      : stepError;
+  const shownActionError =
+    actionError === DESCRIPTION_LIMIT_ERROR && !descriptionOverLimit
+      ? ""
+      : actionError;
   const reviewAmenities = previewAmenityItems(
     values.amenities,
     values.amenities_other,
@@ -511,7 +538,10 @@ export default function ListARoomPage() {
   }, [pending]);
 
   useEffect(() => {
-    if (state?.error) setSavingPreview(false);
+    if (state?.error) {
+      setSavingPreview(false);
+      setHideActionError(false);
+    }
   }, [state]);
 
   const leaveGuard = useLeaveListingGuard({
@@ -727,6 +757,7 @@ export default function ListARoomPage() {
                   name="title"
                   value={values.title}
                   onChange={(e) => update("title", e.target.value)}
+                  onBlur={(e) => update("title", listingTitle(e.target.value))}
                   className={inputClass}
                   placeholder="Acoustic psychotherapy suite"
                   minLength={8}
@@ -948,13 +979,18 @@ export default function ListARoomPage() {
               <Field label="Description" required>
                 <textarea
                   name="description"
-                  rows={5}
+                  rows={12}
                   value={values.description}
-                  onChange={(e) => update("description", e.target.value)}
-                  className={`${inputClass} resize-y`}
+                  onChange={(e) =>
+                    update(
+                      "description",
+                      clampText(e.target.value, MAX_DESCRIPTION_CHARS),
+                    )
+                  }
+                  className={`${inputClass} min-h-[20rem] resize-y`}
                   placeholder="Natural light, acoustic treatment, shared waiting room, practitioner kitchenette..."
-                  minLength={30}
-                  maxLength={1500}
+                  minLength={MIN_DESCRIPTION_CHARS}
+                  maxLength={MAX_DESCRIPTION_CHARS}
                 />
                 <div className="mt-1.5 flex items-center justify-between gap-3 text-xs text-stone-400">
                   <span>
@@ -963,12 +999,13 @@ export default function ListARoomPage() {
                   </span>
                   <span
                     className={
-                      values.description.length > 1400
+                      textLength(values.description) >
+                      MAX_DESCRIPTION_CHARS - 100
                         ? "font-semibold text-amber-700"
                         : ""
                     }
                   >
-                    {values.description.length}/1500
+                    {textLength(values.description)}/{MAX_DESCRIPTION_CHARS}
                   </span>
                 </div>
               </Field>
@@ -1169,7 +1206,7 @@ export default function ListARoomPage() {
               <div className="min-w-0">
               <RoomGallery
                 images={previewUrls}
-                title={values.title || "Untitled room"}
+                title={listingTitle(values.title) || "Untitled room"}
                 roomType={values.room_type}
               />
 
@@ -1177,7 +1214,7 @@ export default function ListARoomPage() {
                 {roomTypeLabel(values.room_type, values.room_type_other)}
               </span>
               <h2 className="mt-3 text-xl font-bold text-stone-900">
-                {values.title || "Untitled room"}
+                {listingTitle(values.title) || "Untitled room"}
               </h2>
               <p className="mt-1 text-sm font-medium text-stone-500">
                 {[values.address_line, values.suburb || "Suburb", values.state]
@@ -1254,8 +1291,8 @@ export default function ListARoomPage() {
             </CardSection>
           </div>
 
-          {(stepError || actionError) ? (
-            <FormError message={stepError || actionError} />
+          {(shownStepError || shownActionError) ? (
+            <FormError message={shownStepError || shownActionError} />
           ) : null}
 
           <div className="flex items-center justify-between gap-3 rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5">

@@ -1,11 +1,17 @@
 import Link from "next/link";
-import { DAY_LABEL, listingRoomTypeLabel, pricePerDayLabel } from "@/lib/format";
+import {
+  DAY_LABEL,
+  listingRoomTypeLabel,
+  listingTitle,
+  pricePerDayLabel,
+} from "@/lib/format";
 import FitImage from "./FitImage";
 import RoomPlaceholder from "./RoomPlaceholder";
 
 const DAYS = Object.keys(DAY_LABEL);
 
 export default function RoomCard({ room }) {
+  const title = listingTitle(room.title);
   const selectedDays = new Set(room.available_days ?? []);
 
   return (
@@ -17,7 +23,7 @@ export default function RoomCard({ room }) {
         {room.image_urls && room.image_urls.length > 0 ? (
           <FitImage
             src={room.image_urls[0]}
-            alt={room.title}
+            alt={title}
             className="h-full w-full transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
@@ -38,7 +44,7 @@ export default function RoomCard({ room }) {
           </div>
 
           <h3 className="mt-2 line-clamp-1 font-sans text-base font-bold text-stone-900 transition-colors group-hover:text-teal-900">
-            {room.title}
+            {title}
           </h3>
         </div>
 

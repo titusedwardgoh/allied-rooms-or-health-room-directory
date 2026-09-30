@@ -4,6 +4,7 @@ import { getRoomBySlug } from "@/lib/db/rooms";
 import {
   DAY_LABEL,
   listingRoomTypeLabel,
+  listingTitle,
   amenityLabel,
   pricePerDayLabel,
   visibleAmenities,
@@ -14,6 +15,7 @@ import { FadeIn } from "@/components/FadeIn";
 import ScrollToTop from "@/components/ScrollToTop";
 import PublishListingBar from "@/components/PublishListingBar";
 import InquireWithClinic from "@/components/InquireWithClinic";
+import ListingDescription from "@/components/ListingDescription";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +25,7 @@ export async function generateMetadata({ params }) {
   if (!room) return { title: "Room" };
 
   return {
-    title: room.title,
+    title: listingTitle(room.title),
     robots: room.is_published ? undefined : { index: false, follow: false },
   };
 }
@@ -35,10 +37,11 @@ export default async function RoomDetailPage({ params }) {
   if (!room) notFound();
 
   const host = room.host ?? {};
+  const title = listingTitle(room.title);
   const isDraft = room.is_published === false;
   const inquiryMessage = `Hi ${host.practice_name || "there"},
 
-I noticed your consulting room ${room.title} listed on AlliedRooms for ${pricePerDayLabel(
+I noticed your consulting room ${title} listed on AlliedRooms for ${pricePerDayLabel(
     room.price_per_day_cents,
   )}.
 
@@ -63,7 +66,7 @@ Sent via AlliedRooms`;
         <FadeIn className="min-w-0">
           <RoomGallery
             images={room.image_urls}
-            title={room.title}
+            title={title}
             roomType={room.room_type}
           />
 
@@ -72,7 +75,7 @@ Sent via AlliedRooms`;
               {listingRoomTypeLabel(room)}
             </span>
             <h1 className="mt-3 font-display text-3xl font-bold text-stone-900">
-              {room.title}
+              {title}
             </h1>
             <p className="mt-1 text-sm font-medium text-stone-500">
               {roomLocationLabel(room)} · Hosted by {host.practice_name || "the clinic"}
@@ -99,9 +102,7 @@ Sent via AlliedRooms`;
             <h3 className="font-display text-lg font-semibold text-stone-900">
               About the Space
             </h3>
-            <p className="mt-3 min-w-0 whitespace-pre-wrap break-words leading-relaxed text-stone-600">
-              {room.description}
-            </p>
+            <ListingDescription text={room.description} />
           </div>
         </FadeIn>
 

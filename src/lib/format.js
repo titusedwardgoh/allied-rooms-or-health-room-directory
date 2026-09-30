@@ -150,6 +150,18 @@ export function visibleAmenities(items) {
   });
 }
 
+export function listingTitle(value) {
+  const text = String(value ?? "").replace(/\s+/g, " ").trim();
+  if (!text) return "";
+  return text
+    .toLocaleLowerCase("en-AU")
+    .replace(
+      /(^|[^\p{L}\p{N}'])(\p{L})/gu,
+      (_, boundary, letter) =>
+        `${boundary}${letter.toLocaleUpperCase("en-AU")}`,
+    );
+}
+
 export function slugify(text) {
   return text
     .toString()

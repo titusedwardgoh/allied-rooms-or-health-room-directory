@@ -7,6 +7,7 @@ import {
   CUSTOM_AMENITY_PREFIX,
   customAmenityError,
   customRoomTypeError,
+  listingTitle,
   normalizeCustomAmenity,
   parseStoredRoomType,
 } from "@/lib/format";
@@ -29,6 +30,9 @@ import {
 import { createSupabaseAdminClient } from "@/lib/supabase";
 import {
   isAuPhone,
+  MAX_DESCRIPTION_CHARS,
+  MIN_DESCRIPTION_CHARS,
+  normalizeNewlines,
   normalizeWebsiteUrl,
   addressLineError,
   dailyRateError,
@@ -44,8 +48,6 @@ const ROOM_TYPES = [
   "flexible",
   "other",
 ];
-const MIN_DESCRIPTION_CHARS = 30;
-const MAX_DESCRIPTION_CHARS = 1500;
 const STATES = ["VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT"];
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const AMENITIES = Object.keys(AMENITY_LABEL);
@@ -174,7 +176,7 @@ function listingToFormValues(room) {
       contact_email: host.contact_email || "",
       phone: host.phone || "",
       website_url: host.website_url || "",
-      title: room.title || "",
+      title: listingTitle(room.title),
       address_line: room.address_line || "",
       suburb: room.suburb || "",
       state: room.state || "VIC",
@@ -213,12 +215,12 @@ function parseListingForm(formData) {
     websiteRaw && !/^https?:\/\/$/i.test(websiteRaw)
       ? normalizeWebsiteUrl(websiteRaw)
       : null;
-  const title = String(formData.get("title") ?? "").trim();
+  const title = listingTitle(formData.get("title"));
   const addressLine = String(formData.get("address_line") ?? "").trim();
   const suburb = String(formData.get("suburb") ?? "").trim();
   const state = String(formData.get("state") ?? "VIC").trim();
   const roomTypeKey = String(formData.get("room_type") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
+  const description = normalizeNewlines(formData.get("description") ?? "").trim();
   const dollars = Number(formData.get("price_per_day"));
   const availableDays = formData
     .getAll("available_days")

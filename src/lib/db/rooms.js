@@ -1,4 +1,4 @@
-import { matchesRoomTypeFilter, slugify } from "@/lib/format";
+import { listingTitle, matchesRoomTypeFilter, slugify } from "@/lib/format";
 import { suburbStatsFromRooms } from "@/lib/hubs";
 import { mockRooms } from "@/lib/mockData";
 import {
@@ -57,6 +57,7 @@ function normalizeRoom(row) {
   const host = Array.isArray(row.host) ? row.host[0] : row.host;
   return {
     ...row,
+    title: listingTitle(row.title),
     host: host ?? null,
     amenities: row.amenities ?? [],
     available_days: row.available_days ?? [],
@@ -83,7 +84,9 @@ function applyRoomFilters(query, filters = {}) {
 }
 
 async function fetchPublishedRooms(filters = {}) {
-  if (!supabaseReaders().length) return filterMock(mockRooms, filters);
+  if (!supabaseReaders().length) {
+    return filterMock(mockRooms, filters).map(normalizeRoom);
+  }
 
   let { data, error } = await queryRooms((supabase) =>
     applyRoomFilters(supabase.from("rooms").select(roomSelect()), filters),
@@ -110,7 +113,7 @@ export async function getRoomBySlug(slug) {
   if (!slug) return null;
 
   if (!supabaseReaders().length) {
-    return mockRooms.find((room) => room.slug === slug) || null;
+    return normalizeRoom(mockRooms.find((room) => room.slug === slug) || null);
   }
 
   let { data, error } = await queryRooms((supabase) =>

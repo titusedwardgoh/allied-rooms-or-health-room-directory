@@ -65,6 +65,21 @@ export function letterCount(value) {
   return (String(value ?? "").match(/\p{L}/gu) || []).length;
 }
 
+export const MIN_DESCRIPTION_CHARS = 30;
+export const MAX_DESCRIPTION_CHARS = 2000;
+
+export function normalizeNewlines(value) {
+  return String(value ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+}
+
+export function textLength(value) {
+  return normalizeNewlines(value).length;
+}
+
+export function clampText(value, max) {
+  return normalizeNewlines(value).slice(0, max);
+}
+
 export function lettersRequiredError(value, noun, minLetters = 2) {
   if (letterCount(value) < minLetters) {
     return `${noun} must include letters, not only numbers or symbols.`;

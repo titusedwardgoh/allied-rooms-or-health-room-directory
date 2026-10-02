@@ -6,9 +6,17 @@ export function normalizePracticeName(name) {
   return String(name ?? "").trim();
 }
 
+function normalizeLeadPhone(phone) {
+  return String(phone ?? "").replace(/\D/g, "");
+}
+
 function samePractice(left, right) {
   return normalizePracticeName(left).toLowerCase() ===
     normalizePracticeName(right).toLowerCase();
+}
+
+function samePhone(left, right) {
+  return normalizeLeadPhone(left) === normalizeLeadPhone(right);
 }
 
 async function findLead(admin, contactEmail, practiceName) {
@@ -55,20 +63,26 @@ export async function upsertListingLead(admin, lead) {
   return admin.from("listing_leads").insert(payload);
 }
 
-export async function markListingLeadComplete(admin, contactEmail, practiceName) {
-  const { lead, error: readError } = await findLead(
-    admin,
-    contactEmail,
-    practiceName,
-  );
-  if (readError) return { error: readError };
-  if (!lead) return { error: null };
-
-  return admin
+export async function deleteMatchingListingLeads(
+  admin,
+  { contactEmail, practiceName, phone },
+) {
+  const { data, error } = await admin
     .from("listing_leads")
-    .update({
-      is_complete: true,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", lead.id);
+    .select("id, practice_name, phone")
+    .eq("contact_email", normalizeLeadEmail(contactEmail));
+
+  if (error) return { error };
+
+  const ids = (data ?? [])
+    .filter(
+      (row) =>
+        samePractice(row.practice_name, practiceName) &&
+        samePhone(row.phone, phone),
+    )
+    .map((row) => row.id);
+
+  if (ids.length === 0) return { error: null };
+
+  return admin.from("listing_leads").delete().in("id", ids);
 }

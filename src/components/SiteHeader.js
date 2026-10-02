@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { X } from "lucide-react";
 import Logo from "@/components/Logo";
+import { useListingFlow } from "@/components/ListingFlow";
 
 const PAGE_LINKS = [
   { href: "/about", label: "About" },
@@ -18,7 +20,7 @@ const MENU_LINKS = [
 ];
 
 function pageLinkClass(active) {
-  return `rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+  return `rounded-full px-[0.825rem] py-[0.4125rem] text-[0.9625rem] font-semibold transition ${
     active
       ? "bg-stone-200/70 text-stone-900"
       : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
@@ -27,6 +29,10 @@ function pageLinkClass(active) {
 
 export default function SiteHeader() {
   const pathname = usePathname();
+  const draftPreview = useListingFlow();
+  const listingFlow =
+    pathname === "/list-a-room" ||
+    (/^\/rooms\/[^/]+$/.test(pathname) && draftPreview);
   const [entered, setEntered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -73,65 +79,86 @@ export default function SiteHeader() {
         transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         className="sticky top-0 z-50 border-b border-stone-200/80 bg-stone-50/80 backdrop-blur-md"
       >
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-8 2xl:max-w-page">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:h-[4.8rem] sm:px-8 2xl:max-w-page">
           <div className="flex min-w-0 items-center gap-5 sm:gap-7">
-            <Logo priority wordmarkClassName="hidden sm:inline" />
-            <nav className="hidden items-center gap-1 sm:flex" aria-label="About and contact">
-              {PAGE_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={pageLinkClass(pathname === link.href)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
+            <Logo
+              priority
+              className="h-9 sm:h-[2.7rem]"
+              wordmarkClassName="hidden sm:inline sm:text-[1.35rem]"
+              linkClassName="sm:gap-3"
+            />
+            {listingFlow ? null : (
+              <nav className="hidden items-center gap-5 sm:flex" aria-label="About and contact">
+                {PAGE_LINKS.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={pageLinkClass(pathname === link.href)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          {listingFlow ? (
             <Link
-              href="/rooms"
-              className="rounded-full border border-stone-900 bg-white px-4 py-2 text-xs font-semibold text-stone-900 transition-all hover:bg-stone-100 active:scale-95"
+              href="/"
+              aria-label={
+                pathname === "/list-a-room"
+                  ? "Close listing form"
+                  : "Close draft preview"
+              }
+              className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full text-stone-800 transition hover:bg-stone-100"
             >
-              <span className="sm:hidden">Find</span>
-              <span className="hidden sm:inline">Find a Room</span>
+              <X className="size-5" strokeWidth={2.25} />
             </Link>
-            <Link
-              href="/list-a-room"
-              className="rounded-full border border-stone-900 bg-stone-900 px-4 py-2 text-xs font-semibold text-stone-50 shadow-sm transition-all hover:bg-stone-800 active:scale-95"
-            >
-              <span className="sm:hidden">List</span>
-              <span className="hidden sm:inline">List a Room</span>
-            </Link>
-            <button
-              type="button"
-              className="inline-flex size-9 items-center justify-center sm:hidden"
-              aria-label={menuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              <div className="space-y-1.5">
-                <motion.span
-                  animate={menuOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
-                  className="block h-0.5 w-6 bg-stone-900 transition-all duration-300"
-                />
-                <motion.span
-                  animate={menuOpen ? { opacity: 0 } : { opacity: 1 }}
-                  className="block h-0.5 w-6 bg-stone-900 transition-all duration-300"
-                />
-                <motion.span
-                  animate={menuOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }}
-                  className="block h-0.5 w-6 bg-stone-900 transition-all duration-300"
-                />
-              </div>
-            </button>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Link
+                href="/rooms"
+                className="rounded-full border border-stone-900 bg-white px-4 py-2 text-xs font-semibold text-stone-900 transition-all hover:bg-stone-100 active:scale-95 sm:px-5 sm:py-2.5 sm:text-sm"
+              >
+                <span className="sm:hidden">Find</span>
+                <span className="hidden sm:inline">Find a Room</span>
+              </Link>
+              <Link
+                href="/list-a-room"
+                className="rounded-full border border-stone-900 bg-stone-900 px-4 py-2 text-xs font-semibold text-stone-50 shadow-sm transition-all hover:bg-stone-800 active:scale-95 sm:px-5 sm:py-2.5 sm:text-sm"
+              >
+                <span className="sm:hidden">List</span>
+                <span className="hidden sm:inline">List a Room</span>
+              </Link>
+              <button
+                type="button"
+                className="inline-flex size-9 items-center justify-center sm:hidden"
+                aria-label={menuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen((open) => !open)}
+              >
+                <div className="space-y-1.5">
+                  <motion.span
+                    animate={menuOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
+                    className="block h-0.5 w-6 bg-stone-900 transition-all duration-300"
+                  />
+                  <motion.span
+                    animate={menuOpen ? { opacity: 0 } : { opacity: 1 }}
+                    className="block h-0.5 w-6 bg-stone-900 transition-all duration-300"
+                  />
+                  <motion.span
+                    animate={menuOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }}
+                    className="block h-0.5 w-6 bg-stone-900 transition-all duration-300"
+                  />
+                </div>
+              </button>
+            </div>
+          )}
         </div>
       </motion.header>
 
       <AnimatePresence>
-        {menuOpen ? (
+        {!listingFlow && menuOpen ? (
           <>
             <motion.div
               key="mobile-menu-backdrop"

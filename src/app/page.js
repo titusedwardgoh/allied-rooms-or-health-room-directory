@@ -58,7 +58,7 @@ export default async function Home() {
         <FadeInOnView className="mb-6 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
-              Directory Highlights
+              Highlights
             </span>
             <h2 className="font-display text-2xl font-bold text-stone-900">
               Recently Listed Rooms

@@ -1,12 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export default function Logo({ className = "h-9", priority = false, wordmarkClassName = "" }) {
+export default function Logo({
+  className = "h-9",
+  priority = false,
+  wordmarkClassName = "",
+  linkClassName = "",
+}) {
   return (
     <Link
       href="/"
       aria-label="AlliedRooms"
-      className="group inline-flex items-center gap-2.5"
+      className={`group inline-flex items-center gap-2.5 ${linkClassName}`}
     >
       <Image
         src="/logo.png"

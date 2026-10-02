@@ -106,7 +106,7 @@ Sent via AlliedRooms`;
           </div>
         </FadeIn>
 
-        <FadeIn delay={0.12} className={`lg:sticky lg:h-fit ${isDraft ? "lg:top-44" : "lg:top-24"}`}>
+        <FadeIn delay={0.12} className={`lg:sticky lg:h-fit ${isDraft ? "lg:top-[11.8rem]" : "lg:top-[6.8rem]"}`}>
           <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-xl shadow-stone-900/5">
             <div className="border-b border-stone-100 pb-4">
               <span className="text-xs font-bold uppercase tracking-wider text-stone-400">

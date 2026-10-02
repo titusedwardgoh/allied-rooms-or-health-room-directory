@@ -24,7 +24,7 @@ import {
   updateHostProfile,
 } from "@/lib/db/profiles";
 import {
-  markListingLeadComplete,
+  deleteMatchingListingLeads,
   upsertListingLead,
 } from "@/lib/db/leads";
 import { createSupabaseAdminClient } from "@/lib/supabase";
@@ -156,6 +156,17 @@ export async function captureListingLead(formData) {
   } catch (error) {
     console.error("captureListingLead:", error?.message || error);
     return { ok: false };
+  }
+}
+
+async function clearSavedListingLead(admin, { practiceName, contactEmail, phone }) {
+  const { error } = await deleteMatchingListingLeads(admin, {
+    practiceName,
+    contactEmail,
+    phone,
+  });
+  if (error) {
+    console.error("deleteMatchingListingLeads:", error.message);
   }
 }
 
@@ -507,17 +518,14 @@ export async function createRoomListing(prevState, formData) {
         }
       }
 
-      const { error: leadError } = await markListingLeadComplete(
-        admin,
-        contactEmail,
-        practiceName,
-      );
-      if (leadError) {
-        console.error("createRoomListing lead:", leadError.message);
-      }
-
       savedSlug = room.slug;
     }
+
+    await clearSavedListingLead(admin, {
+      practiceName,
+      contactEmail,
+      phone,
+    });
   } catch (error) {
     console.error("createRoomListing:", error?.message || error);
     return { error: "Something went wrong while saving the listing. Please try again." };

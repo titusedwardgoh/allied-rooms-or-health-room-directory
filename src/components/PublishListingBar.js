@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Check, Copy } from "lucide-react";
 import PulseOverlay from "@/components/PulseOverlay";
+import { useDraftPreviewHeader } from "@/components/ListingFlow";
 
 const PUBLISH_DELAY_MS = 1100;
 const PUBLISHED_KEY = "alliedrooms:just-published";
@@ -41,6 +42,7 @@ export default function PublishListingBar({ slug, editHref, isDraft }) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
+  useDraftPreviewHeader(isDraft && !published);
 
   useEffect(() => {
     setMounted(true);
@@ -198,7 +200,7 @@ export default function PublishListingBar({ slug, editHref, isDraft }) {
   return (
     <>
       {showBanner ? (
-        <div className="sticky top-16 z-40 bg-amber-300 shadow-md shadow-stone-900/10">
+        <div className="sticky top-16 z-40 bg-amber-300 shadow-md shadow-stone-900/10 sm:top-[4.8rem]">
           <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 2xl:max-w-page">
             <p className="text-base font-medium leading-snug text-stone-900 sm:text-lg">
               <span className="font-extrabold">Draft Preview</span>

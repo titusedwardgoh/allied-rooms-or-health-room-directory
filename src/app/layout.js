@@ -2,6 +2,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import { MotionProvider } from "@/components/FadeIn";
+import { ListingFlowProvider } from "@/components/ListingFlow";
 import { SITE_URL } from "@/lib/site";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
@@ -46,9 +47,11 @@ export default function RootLayout({ children }) {
       </head>
       <body className="min-h-screen bg-paper font-sans text-stone-900 antialiased">
         <MotionProvider>
-          <SiteHeader />
-          {children}
-          <Footer />
+          <ListingFlowProvider>
+            <SiteHeader />
+            {children}
+            <Footer />
+          </ListingFlowProvider>
         </MotionProvider>
         <Analytics />
       </body>

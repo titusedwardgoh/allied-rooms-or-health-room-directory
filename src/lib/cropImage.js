@@ -26,6 +26,46 @@ function loadImage(src) {
   });
 }
 
+export async function compressImageFile(file, maxWidth = 1600, quality = 0.82) {
+  const src = await fileToDataUrl(file);
+  const image = await loadImage(src);
+  const imageWidth = image.naturalWidth || image.width;
+  const imageHeight = image.naturalHeight || image.height;
+  if (!imageWidth || !imageHeight) {
+    throw new Error("Could not read this photo.");
+  }
+
+  const scale = Math.min(1, maxWidth / imageWidth);
+  const width = Math.max(1, Math.round(imageWidth * scale));
+  const height = Math.max(1, Math.round(imageHeight * scale));
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not process this photo.");
+
+  canvas.width = width;
+  canvas.height = height;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(image, 0, 0, width, height);
+
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (result) => {
+        if (result) resolve(result);
+        else reject(new Error("Could not process this photo."));
+      },
+      "image/jpeg",
+      quality,
+    );
+  });
+
+  const fileName = `${String(file.name || "photo").replace(/\.[^.]+$/, "") || "photo"}.jpg`;
+  return new File([blob], fileName, {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  });
+}
+
 export function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -109,7 +149,7 @@ export async function cropImageFile(imageSrc, cropArea, originalName) {
 
   const base = String(originalName || "room-photo").replace(/\.[^.]+$/, "");
   const fileName = `${base || "room-photo"}.jpg`;
-  const previewUrl = canvas.toDataURL("image/jpeg", 0.92);
+  const previewUrl = canvas.toDataURL("image/jpeg", 0.82);
 
   const blob = await new Promise((resolve, reject) => {
     canvas.toBlob(
@@ -118,7 +158,7 @@ export async function cropImageFile(imageSrc, cropArea, originalName) {
         else reject(new Error("Could not crop this photo."));
       },
       "image/jpeg",
-      0.92,
+      0.82,
     );
   });
 

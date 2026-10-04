@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Search, X } from "lucide-react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import PulseOverlay from "@/components/PulseOverlay";
@@ -108,6 +108,7 @@ export default function SearchBar({
   sort = "newest",
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const formRef = useRef(null);
   const whenRef = useRef(null);
   const typeRef = useRef(null);
@@ -120,6 +121,7 @@ export default function SearchBar({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searching, setSearching] = useState(false);
   const searchTimerRef = useRef(null);
+  const daysKey = (days ?? []).join(",");
 
   function openPanel(id, el) {
     const form = formRef.current;
@@ -157,19 +159,35 @@ export default function SearchBar({
     if (sort && sort !== "newest") params.set("sort", sort);
     selectedDays.forEach((d) => d && params.append("day", d));
 
+    const query = params.toString();
+    const href = query ? `/rooms?${query}` : "/rooms";
+    if (pathname === "/rooms") {
+      const current = new URLSearchParams();
+      if (suburb.trim()) current.set("suburb", suburb.trim());
+      if (roomType) current.set("type", roomType);
+      if (maxPrice) current.set("max", maxPrice);
+      if (sort && sort !== "newest") current.set("sort", sort);
+      (days ?? []).forEach((d) => d && current.append("day", d));
+      if (current.toString() === query) return;
+    }
+
     setActive(null);
     setMobileOpen(false);
     setSearching(true);
+    router.prefetch(href);
     window.clearTimeout(searchTimerRef.current);
     searchTimerRef.current = window.setTimeout(() => {
-      router.push(`/rooms?${params.toString()}`);
-      setSearching(false);
+      router.push(href);
     }, SEARCH_DELAY_MS);
   }
 
   useEffect(() => {
     return () => window.clearTimeout(searchTimerRef.current);
   }, []);
+
+  useEffect(() => {
+    setSearching(false);
+  }, [suburb, roomType, maxPrice, sort, daysKey]);
 
   useEffect(() => {
     function onPointerDown(event) {

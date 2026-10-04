@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   AMENITY_LABEL,
@@ -36,7 +36,7 @@ import FitImage from "@/components/FitImage";
 import PhotoCropModal from "@/components/PhotoCropModal";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import RoomGallery from "@/components/RoomGallery";
-import { fileToDataUrl, ensurePhotoFile } from "@/lib/cropImage";
+import { fileToDataUrl, ensurePhotoFile, compressImageFile } from "@/lib/cropImage";
 import { ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
 import PulseOverlay from "@/components/PulseOverlay";
 import { FadeIn } from "@/components/FadeIn";
@@ -155,6 +155,11 @@ const choiceCardClass = (selected) =>
       : "border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:bg-stone-50"
   }`;
 
+function isNextRedirectError(error) {
+  const digest = String(error?.digest || "");
+  return digest === "NEXT_REDIRECT" || digest.startsWith("NEXT_REDIRECT");
+}
+
 function actionErrorMessage(state) {
   if (!state || typeof state !== "object") return "";
   return typeof state.error === "string" ? state.error : "";
@@ -232,9 +237,9 @@ export default function ListARoomPage() {
   const [hideActionError, setHideActionError] = useState(false);
   const [stepBlockedMessage, setStepBlockedMessage] = useState("");
   const [photoError, setPhotoError] = useState("");
-  const [state, formAction, pending] = useActionState(createRoomListing, null);
+  const [state, setState] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [advancing, setAdvancing] = useState(false);
-  const [savingPreview, setSavingPreview] = useState(false);
   const [editReady, setEditReady] = useState(!searchParams.get("edit"));
   const [editMissing, setEditMissing] = useState(false);
   const fileInputRef = useRef(null);
@@ -271,26 +276,33 @@ export default function ListARoomPage() {
     setEditReady(false);
     setEditMissing(false);
 
-    getListingForEdit(editSlug).then((listing) => {
-      if (cancelled) return;
-      if (!listing) {
+    getListingForEdit(editSlug)
+      .then((listing) => {
+        if (cancelled) return;
+        if (!listing) {
+          setEditMissing(true);
+          setEditReady(true);
+          return;
+        }
+        setValues({
+          ...listing.values,
+          description: normalizeNewlines(listing.values.description ?? ""),
+        });
+        setGallery(
+          (listing.imageUrls || []).map((src) => ({
+            id: createPhotoId(),
+            kind: "url",
+            src,
+          })),
+        );
+        setEditReady(true);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("getListingForEdit:", error);
         setEditMissing(true);
         setEditReady(true);
-        return;
-      }
-      setValues({
-        ...listing.values,
-        description: normalizeNewlines(listing.values.description ?? ""),
       });
-      setGallery(
-        (listing.imageUrls || []).map((src) => ({
-          id: createPhotoId(),
-          kind: "url",
-          src,
-        })),
-      );
-      setEditReady(true);
-    });
 
     return () => {
       cancelled = true;
@@ -351,9 +363,18 @@ export default function ListARoomPage() {
     const accepted = checkedFiles.slice(0, remaining);
     if (accepted.length > 0) setStepError("");
     const urls = await Promise.all(accepted.map((file) => fileToDataUrl(file)));
+    const compressed = [];
+    for (let index = 0; index < accepted.length; index += 1) {
+      try {
+        compressed.push(await compressImageFile(accepted[index]));
+      } catch (error) {
+        console.error("compressImageFile:", error);
+        compressed.push(accepted[index]);
+      }
+    }
     setGallery((current) => [
       ...current,
-      ...accepted.map((file, index) => ({
+      ...compressed.map((file, index) => ({
         id: createPhotoId(),
         kind: "file",
         file,
@@ -451,7 +472,7 @@ export default function ListARoomPage() {
   }, [step]);
 
   async function goNext() {
-    if (advancing || pending) return;
+    if (advancing || saving) return;
     const error = validateStep(step);
     if (error) {
       setStepError(error);
@@ -505,6 +526,47 @@ export default function ListARoomPage() {
     router.push(stepHref(pathname, target, editSlug), { scroll: false });
   }
 
+  async function handleSaveSubmit(event) {
+    event.preventDefault();
+    if (saving || advancing) return;
+    if (step < TOTAL_STEPS) {
+      goNext();
+      return;
+    }
+
+    const error = validateStep(3);
+    if (error) {
+      setStepError(error);
+      return;
+    }
+
+    setStepError("");
+    setHideActionError(false);
+    setSaving(true);
+    allowLeaveRef.current = true;
+
+    try {
+      const result = await createRoomListing(
+        null,
+        new FormData(event.currentTarget),
+      );
+      if (result?.error) {
+        setState({ error: result.error });
+        setSaving(false);
+        allowLeaveRef.current = false;
+      }
+    } catch (submitError) {
+      if (isNextRedirectError(submitError)) throw submitError;
+      console.error("createRoomListing:", submitError);
+      setState({
+        error:
+          "Could not save this listing. If your photos are large, try fewer or smaller files, then try again.",
+      });
+      setSaving(false);
+      allowLeaveRef.current = false;
+    }
+  }
+
   useEffect(() => {
     if (!stepBlockedMessage) return undefined;
     function onKeyDown(event) {
@@ -534,18 +596,18 @@ export default function ListARoomPage() {
   const hasProgress = listingHasProgress(values, photos, step);
 
   useEffect(() => {
-    if (pending) allowLeaveRef.current = true;
-  }, [pending]);
+    if (saving) allowLeaveRef.current = true;
+  }, [saving]);
 
   useEffect(() => {
     if (state?.error) {
-      setSavingPreview(false);
+      setSaving(false);
       setHideActionError(false);
     }
   }, [state]);
 
   const leaveGuard = useLeaveListingGuard({
-    active: hasProgress && !pending && editReady,
+    active: hasProgress && !saving && editReady,
     allowLeaveRef,
   });
 
@@ -638,7 +700,7 @@ export default function ListARoomPage() {
 
         <form
           ref={formRef}
-          action={formAction}
+          onSubmit={handleSaveSubmit}
           noValidate
           onKeyDown={(e) => {
             if (e.key === "Enter" && step < 3 && e.target.tagName === "INPUT") {
@@ -1299,7 +1361,7 @@ export default function ListARoomPage() {
             <button
               type="button"
               onClick={goBack}
-              disabled={step === 1 || pending || advancing}
+              disabled={step === 1 || saving || advancing}
               className="rounded-full cursor-pointer border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-40"
             >
               Back
@@ -1310,7 +1372,7 @@ export default function ListARoomPage() {
                 key="continue"
                 type="button"
                 onClick={goNext}
-                disabled={advancing || pending}
+                disabled={advancing || saving}
                 className="rounded-full cursor-pointer bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-950 disabled:opacity-60"
               >
                 {advancing ? "Saving…" : "Continue"}
@@ -1318,21 +1380,11 @@ export default function ListARoomPage() {
             ) : (
               <button
                 key="publish"
-                type="button"
-                disabled={pending || savingPreview}
-                onClick={(event) => {
-                  const error = validateStep(3);
-                  if (error) {
-                    setStepError(error);
-                    return;
-                  }
-                  setStepError("");
-                  setSavingPreview(true);
-                  event.currentTarget.form?.requestSubmit();
-                }}
+                type="submit"
+                disabled={saving}
                 className="rounded-full cursor-pointer bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-950 disabled:opacity-60"
               >
-                {pending || savingPreview
+                {saving
                   ? "Saving preview…"
                   : editSlug
                     ? "Save changes"
@@ -1425,7 +1477,7 @@ export default function ListARoomPage() {
         />
       ) : null}
 
-      {pending || savingPreview ? (
+      {saving ? (
         <PulseOverlay
           label={editSlug ? "Saving changes" : "Saving preview"}
         />

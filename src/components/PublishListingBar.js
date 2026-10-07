@@ -71,6 +71,7 @@ export default function PublishListingBar({ slug, editHref, isDraft }) {
     if (isPublishing || published) return;
     setIsPublishing(true);
     setError("");
+    router.prefetch("/");
 
     try {
       const [response] = await Promise.all([
@@ -85,15 +86,14 @@ export default function PublishListingBar({ slug, editHref, isDraft }) {
 
       if (!response.ok || result?.error) {
         setError(result?.error || "Could not publish this listing. Please try again.");
+        setIsPublishing(false);
         return;
       }
 
-      markJustPublished(slug);
-      setPublished(true);
+      router.push("/");
     } catch (publishError) {
       console.error("publishListing:", publishError);
       setError("Could not publish this listing. Please try again.");
-    } finally {
       setIsPublishing(false);
     }
   }
@@ -117,7 +117,8 @@ export default function PublishListingBar({ slug, editHref, isDraft }) {
 
   function closeToHome() {
     clearJustPublished();
-    setPublished(false);
+    setIsPublishing(true);
+    router.prefetch("/");
     router.push("/");
   }
 

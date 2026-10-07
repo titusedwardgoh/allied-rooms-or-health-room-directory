@@ -7,6 +7,7 @@ export const SUBURB_HUBS = {
   "South Melbourne": { image: "/hubs/South Melbourne.jpg", tag: "Inner South" },
   Camberwell: { image: "/hubs/Camberwell.jpg", tag: "East" },
   Carlton: { image: "/hubs/Carlton.webp", tag: "Inner North" },
+  Southbank: { image: "/hubs/Southbank.webp", tag: "CBD" },
 };
 
 const HUB_BY_KEY = Object.fromEntries(

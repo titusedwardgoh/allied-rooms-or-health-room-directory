@@ -55,10 +55,14 @@ function parseStepParam(value) {
   return 1;
 }
 
-function stepHref(pathname, step, editSlug = "") {
+function stepHref(pathname, step, editSlug = "", listingParams = {}) {
   const params = new URLSearchParams();
   if (step > 1) params.set("step", String(step));
   if (editSlug) params.set("edit", editSlug);
+  if (listingParams.listedBy === "internal") {
+    params.set("listed_by", "internal");
+  }
+  if (listingParams.key) params.set("key", listingParams.key);
   const query = params.toString();
   return query ? `${pathname}?${query}` : pathname;
 }
@@ -246,6 +250,12 @@ export default function ListARoomPage() {
   const formRef = useRef(null);
   const allowLeaveRef = useRef(false);
   const editSlug = searchParams.get("edit") || "";
+  const listedByParam = searchParams.get("listed_by") || "";
+  const listingKeyParam = searchParams.get("key") || "";
+  const listingParams = {
+    listedBy: listedByParam,
+    key: listingKeyParam,
+  };
   const photos = gallery
     .filter((item) => item.kind === "file")
     .map((item) => item.file);
@@ -460,8 +470,18 @@ export default function ListARoomPage() {
 
   useEffect(() => {
     if (requestedStep === step) return;
-    router.replace(stepHref(pathname, step, editSlug), { scroll: false });
-  }, [editSlug, pathname, requestedStep, router, step]);
+    router.replace(stepHref(pathname, step, editSlug, listingParams), {
+      scroll: false,
+    });
+  }, [
+    editSlug,
+    listingKeyParam,
+    listedByParam,
+    pathname,
+    requestedStep,
+    router,
+    step,
+  ]);
 
   const prevStepRef = useRef(step);
   useEffect(() => {
@@ -498,9 +518,17 @@ export default function ListARoomPage() {
       }
     }
 
-    router.push(stepHref(pathname, Math.min(TOTAL_STEPS, step + 1), editSlug), {
-      scroll: false,
-    });
+    router.push(
+      stepHref(
+        pathname,
+        Math.min(TOTAL_STEPS, step + 1),
+        editSlug,
+        listingParams,
+      ),
+      {
+        scroll: false,
+      },
+    );
   }
 
   function goBack() {
@@ -523,7 +551,9 @@ export default function ListARoomPage() {
 
     setStepError("");
     setStepBlockedMessage("");
-    router.push(stepHref(pathname, target, editSlug), { scroll: false });
+    router.push(stepHref(pathname, target, editSlug, listingParams), {
+      scroll: false,
+    });
   }
 
   async function handleSaveSubmit(event) {
@@ -720,6 +750,16 @@ export default function ListARoomPage() {
           />
           {editSlug ? (
             <input type="hidden" name="edit_slug" value={editSlug} />
+          ) : null}
+          {listedByParam === "internal" && listingKeyParam ? (
+            <>
+              <input type="hidden" name="listed_by" value="internal" />
+              <input
+                type="hidden"
+                name="listing_internal_key"
+                value={listingKeyParam}
+              />
+            </>
           ) : null}
           {gallery.map((item, index) => (
             <input

@@ -48,6 +48,16 @@ const ROOM_TYPES = [
   "flexible",
   "other",
 ];
+
+function isInternalListingRequest(formData) {
+  const expected = String(process.env.LISTING_INTERNAL_KEY || "").trim();
+  if (!expected) return false;
+  const listedBy = String(formData.get("listed_by") || "")
+    .trim()
+    .toLowerCase();
+  const key = String(formData.get("listing_internal_key") || "").trim();
+  return listedBy === "internal" && key === expected;
+}
 const STATES = ["VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT"];
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const AMENITIES = Object.keys(AMENITY_LABEL);
@@ -403,6 +413,9 @@ export async function createRoomListing(prevState, formData) {
     }
 
     const pricePerDayCents = Math.round(dollars * 100);
+    const listedBy = isInternalListingRequest(formData)
+      ? "internal"
+      : "external";
     const roomFields = {
       title,
       address_line: addressLine,
@@ -454,6 +467,7 @@ export async function createRoomListing(prevState, formData) {
         existing.id,
         {
           ...roomFields,
+          ...(listedBy === "internal" ? { listed_by: "internal" } : {}),
           ...(imageUrls.length > 0 ? { image_urls: imageUrls } : {}),
         },
       );
@@ -498,6 +512,7 @@ export async function createRoomListing(prevState, formData) {
         image_urls: [],
         is_published: false,
         ...roomFields,
+        listed_by: listedBy,
       });
 
       if (roomError) {

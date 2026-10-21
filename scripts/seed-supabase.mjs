@@ -74,6 +74,7 @@ async function seed() {
       image_urls: room.image_urls ?? [],
       description: room.description,
       is_published: true,
+      listed_by: "internal",
     });
 
     if (roomError) throw roomError;

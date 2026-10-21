@@ -7,6 +7,7 @@ const STATIC_ROUTES = [
   { path: "", priority: 1 },
   { path: "/rooms", priority: 0.9 },
   { path: "/about", priority: 0.8 },
+  { path: "/faq", priority: 0.8 },
   { path: "/contact", priority: 0.8 },
   { path: "/list-a-room", priority: 0.8 },
   { path: "/privacy", priority: 0.3 },

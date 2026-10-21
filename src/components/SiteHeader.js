@@ -10,6 +10,7 @@ import { useListingFlow } from "@/components/ListingFlow";
 
 const PAGE_LINKS = [
   { href: "/about", label: "About" },
+  { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ];
 
@@ -88,7 +89,7 @@ export default function SiteHeader() {
               linkClassName="sm:gap-3"
             />
             {listingFlow ? null : (
-              <nav className="hidden items-center gap-5 sm:flex" aria-label="About and contact">
+              <nav className="hidden items-center gap-5 sm:flex" aria-label="About, FAQ and contact">
                 {PAGE_LINKS.map((link) => (
                   <Link
                     key={link.href}

@@ -14,7 +14,13 @@ const MARKETPLACE = [
 
 const COMPANY = [
   { href: "/about", label: "About Us" },
+  { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
+];
+
+const LEGAL = [
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/terms", label: "Terms of Service" },
 ];
 
 function FooterColumn({ title, children }) {
@@ -72,6 +78,16 @@ export default function Footer() {
               ))}
             </FooterColumn>
 
+            <FooterColumn title="Legal">
+              {LEGAL.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className={LINK_CLASS}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </FooterColumn>
+
             <FooterColumn title="Support">
               <li>
                 <a href={`mailto:${SUPPORT_EMAIL}`} className={LINK_CLASS}>
@@ -89,7 +105,7 @@ export default function Footer() {
               Privacy Policy
             </Link>
             <Link href="/terms" className="transition-colors hover:text-teal-900">
-              Terms
+              Terms of Service
             </Link>
           </div>
         </div>

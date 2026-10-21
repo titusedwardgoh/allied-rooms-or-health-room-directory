@@ -135,7 +135,7 @@ export default function InquireWithClinic({ slug, initialMessage }) {
               autoComplete="email"
               value={values.email}
               onChange={(event) => update("email", event.target.value)}
-              placeholder="you@clinic.com.au"
+              placeholder="you@email.com"
               className={INPUT_CLASS}
             />
           </label>

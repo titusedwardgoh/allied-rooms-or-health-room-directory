@@ -142,6 +142,43 @@ export async function getFeaturedRooms(limit = 6) {
   return rooms.slice(0, limit);
 }
 
+function similarScore(candidate, room) {
+  const suburb = String(room?.suburb || "").trim().toLowerCase();
+  const candidateSuburb = String(candidate?.suburb || "").trim().toLowerCase();
+  const price = Number(room?.price_per_day_cents) || 0;
+  const candidatePrice = Number(candidate?.price_per_day_cents) || 0;
+  let score = 0;
+  if (suburb && candidateSuburb === suburb) score += 4;
+  if (room?.room_type && candidate?.room_type === room.room_type) score += 2;
+  score -= Math.min(2, Math.abs(candidatePrice - price) / 5000);
+  return score;
+}
+
+export async function getSimilarRooms(room, limit = 3) {
+  if (!room || limit < 1) return [];
+
+  const rooms = await fetchPublishedRooms();
+  const currentId = room.id;
+  const currentSlug = room.slug;
+
+  return rooms
+    .filter(
+      (candidate) =>
+        candidate &&
+        candidate.id !== currentId &&
+        candidate.slug !== currentSlug,
+    )
+    .sort((a, b) => {
+      const scoreDiff = similarScore(b, room) - similarScore(a, room);
+      if (scoreDiff !== 0) return scoreDiff;
+      return (
+        new Date(b.created_at || 0).getTime() -
+        new Date(a.created_at || 0).getTime()
+      );
+    })
+    .slice(0, limit);
+}
+
 export async function getSuburbStats() {
   if (!isSupabaseConfigured()) {
     return statsFromRooms(mockRooms);

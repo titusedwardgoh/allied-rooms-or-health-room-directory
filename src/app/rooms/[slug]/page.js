@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { roomLocationLabel } from "@/lib/auAddress";
-import { getRoomBySlug } from "@/lib/db/rooms";
+import { getRoomBySlug, getSimilarRooms } from "@/lib/db/rooms";
 import {
   DAY_LABEL,
   listingRoomTypeLabel,
@@ -16,6 +16,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import PublishListingBar from "@/components/PublishListingBar";
 import InquireWithClinic from "@/components/InquireWithClinic";
 import ListingDescription from "@/components/ListingDescription";
+import SimilarRooms from "@/components/SimilarRooms";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,7 @@ export default async function RoomDetailPage({ params }) {
   const host = room.host ?? {};
   const title = listingTitle(room.title);
   const isDraft = room.is_published === false;
+  const similarRooms = isDraft ? [] : await getSimilarRooms(room, 3);
   const inquiryMessage = `Hi ${host.practice_name || "there"},
 
 I noticed your consulting room ${title} listed on AlliedRooms for ${pricePerDayLabel(
@@ -149,6 +151,7 @@ Sent via AlliedRooms`;
           </div>
         </FadeIn>
       </div>
+      {isDraft ? null : <SimilarRooms room={room} rooms={similarRooms} />}
     </main>
     </>
   );

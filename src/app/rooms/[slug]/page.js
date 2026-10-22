@@ -17,6 +17,7 @@ import PublishListingBar from "@/components/PublishListingBar";
 import InquireWithClinic from "@/components/InquireWithClinic";
 import ListingDescription from "@/components/ListingDescription";
 import SimilarRooms from "@/components/SimilarRooms";
+import PricePerDay from "@/components/PricePerDay";
 
 export const dynamic = "force-dynamic";
 
@@ -115,7 +116,7 @@ Sent via AlliedRooms`;
                 Daily Rate
               </span>
               <div className="font-display text-3xl font-bold text-stone-900">
-                {pricePerDayLabel(room.price_per_day_cents)}
+                <PricePerDay cents={room.price_per_day_cents} />
               </div>
               <span className="text-xs text-stone-500">
                 Sessional hire · No long-term lease

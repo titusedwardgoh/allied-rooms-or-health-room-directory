@@ -61,7 +61,7 @@ function isInternalListingRequest(formData) {
 const STATES = ["VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT"];
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const AMENITIES = Object.keys(AMENITY_LABEL);
-const MAX_PHOTOS = 6;
+const MAX_PHOTOS = 8;
 const MAX_PHOTO_BYTES = 6 * 1024 * 1024;
 
 function collectPhotos(formData) {
@@ -243,10 +243,10 @@ function parseListingForm(formData) {
   const roomTypeKey = String(formData.get("room_type") ?? "").trim();
   const description = normalizeNewlines(formData.get("description") ?? "").trim();
   const dollars = Number(formData.get("price_per_day"));
-  const availableDays = formData
-    .getAll("available_days")
-    .map(String)
-    .filter((day) => DAYS.includes(day));
+  const selectedDays = new Set(
+    formData.getAll("available_days").map(String),
+  );
+  const availableDays = DAYS.filter((day) => selectedDays.has(day));
   const amenities = formData
     .getAll("amenities")
     .map(String)

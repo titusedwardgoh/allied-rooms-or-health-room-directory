@@ -9,7 +9,7 @@ import { getFeaturedRooms, getSuburbStats } from "@/lib/db/rooms";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const featured = await getFeaturedRooms(6);
+  const featured = await getFeaturedRooms(8);
   const stats = await getSuburbStats();
 
   return (
@@ -54,7 +54,7 @@ export default async function Home() {
         <SuburbBento stats={stats} />
       </FadeInOnView>
 
-      <section className="mx-auto max-w-6xl px-6 py-6 sm:px-8 sm:py-12 2xl:max-w-page-inset">
+      <section className="mx-auto max-w-6xl px-6 py-6 sm:px-8 sm:py-12 2xl:max-w-page-inset min-[1720px]:!max-w-[106rem]">
         <FadeInOnView className="mb-6 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
@@ -72,7 +72,7 @@ export default async function Home() {
           </Link>
         </FadeInOnView>
 
-        <Stagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <Stagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 min-[1720px]:!grid-cols-4">
           {featured.map((room) => (
             <StaggerItem key={room.id} className="h-full">
               <RoomCard room={room} />

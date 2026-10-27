@@ -7,6 +7,7 @@ import {
   AU_STATES,
   CUSTOM_AMENITY_PREFIX,
   DAY_LABEL,
+  orderedDays,
   MAX_CUSTOM_AMENITY_CHARS,
   MIN_CUSTOM_AMENITY_CHARS,
   ROOM_TYPE_LABEL,
@@ -116,7 +117,7 @@ function Field({ label, required, optional, children }) {
 
 function CardSection({ title, description, children }) {
   return (
-    <section className="rounded-2xl border border-stone-200/80 bg-white p-6 shadow-sm shadow-stone-900/5">
+    <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
       {title ? (
         <div className="mb-5">
           <h2 className="text-base font-bold tracking-tight text-stone-900">{title}</h2>
@@ -142,6 +143,7 @@ function FormError({ message }) {
   );
 }
 
+const MAX_PHOTOS = 8;
 const MAX_PHOTO_BYTES = 6 * 1024 * 1024;
 const MIN_PHOTO_WIDTH = 800;
 const MIN_PHOTO_HEIGHT = 500;
@@ -369,7 +371,7 @@ export default function ListARoomPage() {
     }
 
     setPhotoError("");
-    const remaining = 6 - gallery.length;
+    const remaining = MAX_PHOTOS - gallery.length;
     const accepted = checkedFiles.slice(0, remaining);
     if (accepted.length > 0) setStepError("");
     const urls = await Promise.all(accepted.map((file) => fileToDataUrl(file)));
@@ -645,8 +647,8 @@ export default function ListARoomPage() {
 
   if (!editReady) {
     return (
-      <main className="min-h-screen bg-stone-50">
-        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+      <main className="min-h-screen bg-stone-50/60">
+        <div className="mx-auto max-w-6xl px-4 py-12 text-center sm:px-6 lg:px-8">
           <p className="text-sm text-stone-500">Loading listing…</p>
         </div>
       </main>
@@ -655,41 +657,46 @@ export default function ListARoomPage() {
 
   if (editMissing) {
     return (
-      <main className="min-h-screen bg-stone-50">
-        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-          <h1 className="font-sans text-3xl font-extrabold text-stone-900">
-            Listing not found
-          </h1>
-          <p className="mt-2 text-stone-600">
-            This draft may already be published, or the preview link is invalid.
-          </p>
-          <a
-            href="/list-a-room"
-            className="mt-6 inline-block rounded-full bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white"
-          >
-            List a Room
-          </a>
+      <main className="min-h-screen bg-stone-50/60">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <h1 className="font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl">
+              Listing not found
+            </h1>
+            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-stone-600">
+              This draft may already be published, or the preview link is invalid.
+            </p>
+            <a
+              href="/list-a-room"
+              className="mt-8 inline-block rounded-full bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white"
+            >
+              List a Room
+            </a>
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-stone-50">
-      <FadeIn className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <main className="min-h-screen bg-stone-50/60">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+      <FadeIn className="mx-auto max-w-2xl text-center">
         <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
           For clinic hosts
         </span>
-        <h1 className="mt-2 font-sans text-4xl font-extrabold tracking-tight text-stone-900">
+        <h1 className="mt-2 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl">
           {editSlug ? "Edit listing" : "List a Room"}
         </h1>
-        <p className="mt-2 max-w-xl text-stone-600">
+        <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-stone-600">
           {editSlug
             ? "Update the details, then save to return to your private preview."
             : "Three short steps. You’ll get a private preview link before it appears in search."}
         </p>
+      </FadeIn>
 
-        <div className="mt-10 scroll-mt-24">
+      <FadeIn delay={0.1} className="mx-auto mt-10 max-w-3xl">
+        <div className="scroll-mt-24">
           <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-stone-400">
             <span>
               Step {step} of {TOTAL_STEPS}
@@ -1136,7 +1143,7 @@ export default function ListARoomPage() {
                 Drag high-res photos here, or click to select files
               </p>
               <p className="mt-1 text-xs text-stone-500">
-                At least one photo is required. Up to 6 landscape photos.
+                At least one photo is required. Up to 8 landscape photos.
                 Minimum resolution: <strong>800 × 500 px</strong> (6MB max).
               </p>
               <button
@@ -1166,7 +1173,7 @@ export default function ListARoomPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
-                    Listing photos ({previewUrls.length}/6)
+                    Listing photos ({previewUrls.length}/{MAX_PHOTOS})
                   </p>
                   <p className="text-xs text-stone-500">
                     Drag to rearrange.
@@ -1345,7 +1352,7 @@ export default function ListARoomPage() {
                 </p>
                 {values.available_days.length > 0 ? (
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {values.available_days.map((d) => (
+                    {orderedDays(values.available_days).map((d) => (
                       <span
                         key={d}
                         className="rounded bg-stone-900 px-2 py-1 text-xs font-bold uppercase text-white"
@@ -1397,7 +1404,7 @@ export default function ListARoomPage() {
             <FormError message={shownStepError || shownActionError} />
           ) : null}
 
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
             <button
               type="button"
               onClick={goBack}
@@ -1434,6 +1441,7 @@ export default function ListARoomPage() {
           </div>
         </form>
       </FadeIn>
+      </div>
 
       <LeaveListingModal
         open={Boolean(leaveGuard.pendingHref)}

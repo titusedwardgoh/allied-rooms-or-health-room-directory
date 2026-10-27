@@ -3,6 +3,7 @@ import { roomLocationLabel } from "@/lib/auAddress";
 import { getRoomBySlug, getSimilarRooms } from "@/lib/db/rooms";
 import {
   DAY_LABEL,
+  orderedDays,
   listingRoomTypeLabel,
   listingTitle,
   amenityLabel,
@@ -128,7 +129,7 @@ Sent via AlliedRooms`;
                 Available Days
               </span>
               <div className="flex flex-wrap gap-1">
-                {room.available_days.map((d) => (
+                {orderedDays(room.available_days).map((d) => (
                   <span
                     key={d}
                     className="rounded bg-stone-900 px-2 py-1 text-xs font-bold uppercase text-white"

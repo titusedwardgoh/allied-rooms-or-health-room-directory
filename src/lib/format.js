@@ -16,6 +16,11 @@ export const DAY_LABEL = {
   sun: "Sun",
 };
 
+export function orderedDays(days) {
+  const selected = new Set(days ?? []);
+  return Object.keys(DAY_LABEL).filter((day) => selected.has(day));
+}
+
 export function formatAUDFromCents(cents) {
   return new Intl.NumberFormat("en-AU", {
     style: "currency",

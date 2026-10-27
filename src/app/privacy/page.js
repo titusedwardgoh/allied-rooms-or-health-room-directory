@@ -72,23 +72,23 @@ const SECTIONS = [
 export default function PrivacyPage() {
   return (
     <main className="min-h-screen bg-stone-50/60">
-      <div className="mx-auto max-w-3xl px-6 py-12 sm:px-8 sm:py-16">
-        <FadeIn>
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <FadeIn className="mx-auto max-w-2xl text-center">
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
             Legal
           </span>
           <h1 className="mt-2 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl">
             Privacy Policy
           </h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-stone-600">
+          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-stone-600">
             How AlliedRooms handles personal information for the Melbourne
             sessional room directory.
           </p>
           <p className="mt-2 text-sm text-stone-500">Last updated 22 October 2026</p>
         </FadeIn>
 
-        <FadeInOnView className="mt-10">
-          <article className="rounded-2xl border border-stone-200/80 bg-white p-6 shadow-sm shadow-stone-900/5 sm:p-10">
+        <FadeInOnView className="mx-auto mt-10 max-w-3xl">
+          <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-10">
             <div className="space-y-8">
               {SECTIONS.map((section) => (
                 <section key={section.title}>

@@ -106,46 +106,48 @@ const HOSTS = [
 export default function FaqPage() {
   return (
     <main className="min-h-screen bg-stone-50/60">
-      <div className="mx-auto max-w-3xl px-6 py-12 sm:px-8 sm:py-16">
-        <FadeIn>
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <FadeIn className="mx-auto max-w-2xl text-center">
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
             FAQ
           </span>
           <h1 className="mt-2 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl">
-            Frequently asked questions.
+            Frequently asked questions
           </h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-stone-600">
+          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-stone-600">
             How the directory works if you are looking for a sessional room, or
             listing unused clinic space in Melbourne.
           </p>
         </FadeIn>
 
-        <FadeInOnView className="mt-10">
-          <section className="rounded-2xl border border-stone-200/80 bg-white px-6 shadow-sm shadow-stone-900/5 sm:px-8">
-            <h2 className="pt-6 font-sans text-xl font-black text-stone-900">
-              For practitioners
-            </h2>
-            <p className="mt-1 text-sm text-stone-500">
-              Hiring a consulting room by the day.
-            </p>
-            <FaqAccordion items={PRACTITIONERS} />
-          </section>
-        </FadeInOnView>
+        <div className="mt-10 grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
+          <FadeInOnView className="h-full">
+            <section className="flex h-full flex-col rounded-2xl border border-stone-200 bg-white px-6 pb-6 shadow-sm sm:px-8">
+              <h2 className="pt-6 font-sans text-xl font-black text-stone-900">
+                For practitioners
+              </h2>
+              <p className="mt-1 text-sm text-stone-500">
+                Hiring a consulting room by the day.
+              </p>
+              <FaqAccordion items={PRACTITIONERS} />
+            </section>
+          </FadeInOnView>
 
-        <FadeInOnView className="mt-6">
-          <section className="rounded-2xl border border-stone-200/80 bg-white px-6 shadow-sm shadow-stone-900/5 sm:px-8">
-            <h2 className="pt-6 font-sans text-xl font-black text-stone-900">
-              For clinic hosts
-            </h2>
-            <p className="mt-1 text-sm text-stone-500">
-              Listing spare rooms on the directory.
-            </p>
-            <FaqAccordion items={HOSTS} />
-          </section>
-        </FadeInOnView>
+          <FadeInOnView className="h-full">
+            <section className="flex h-full flex-col rounded-2xl border border-stone-200 bg-white px-6 pb-6 shadow-sm sm:px-8">
+              <h2 className="pt-6 font-sans text-xl font-black text-stone-900">
+                For clinic hosts
+              </h2>
+              <p className="mt-1 text-sm text-stone-500">
+                Listing spare rooms on the directory.
+              </p>
+              <FaqAccordion items={HOSTS} />
+            </section>
+          </FadeInOnView>
+        </div>
 
-        <FadeInOnView className="mt-10">
-          <p className="text-sm leading-relaxed text-stone-600">
+        <FadeInOnView className="mt-12 text-center text-sm text-stone-600">
+          <p className="leading-relaxed">
             Still have a question?{" "}
             <Link
               href="/contact"

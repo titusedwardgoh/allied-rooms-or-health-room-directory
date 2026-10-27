@@ -73,15 +73,15 @@ export default function ContactPage() {
 
   return (
     <main className="min-h-screen bg-stone-50/60">
-      <div className="mx-auto max-w-3xl px-6 py-12 sm:px-8 sm:py-16">
-        <FadeIn>
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <FadeIn className="mx-auto max-w-2xl text-center">
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
             Contact
           </span>
           <h1 className="mt-2 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl">
-            Get in touch.
+            Get in touch
           </h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-stone-600">
+          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-stone-600">
             Questions about listing a room, finding a space, or the directory
             itself? Send a note and we will get back to you.
           </p>
@@ -96,9 +96,9 @@ export default function ContactPage() {
           </p>
         </FadeIn>
 
-        <FadeIn delay={0.1} className="mt-10">
+        <FadeIn delay={0.1} className="mx-auto mt-10 max-w-3xl">
           {sent ? (
-            <div className="rounded-2xl border border-stone-200/80 bg-white p-8 text-center shadow-sm shadow-stone-900/5 sm:p-12">
+            <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm sm:p-12">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-teal-900 text-white shadow-lg shadow-teal-900/20 ring-8 ring-teal-900/10">
                 <Check className="h-6 w-6" aria-hidden="true" />
               </div>
@@ -124,7 +124,7 @@ export default function ContactPage() {
             <form
               onSubmit={handleSubmit}
               noValidate
-              className="rounded-2xl border border-stone-200/80 bg-white p-6 shadow-sm shadow-stone-900/5 sm:p-8"
+              className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8"
             >
               <div className="space-y-5">
                 <label className="block">

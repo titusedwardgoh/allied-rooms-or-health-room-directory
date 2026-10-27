@@ -37,7 +37,7 @@ function FooterColumn({ title, children }) {
 export default function Footer() {
   return (
     <footer className="border-t border-stone-200/80 bg-stone-50/80">
-      <FadeInOnView className="mx-auto max-w-6xl px-6 py-12 sm:px-8 sm:py-14 2xl:max-w-page">
+      <FadeInOnView className="mx-auto max-w-6xl px-6 py-12 sm:px-8 sm:py-14 2xl:max-w-page min-[1720px]:!max-w-[106rem]">
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-sm shrink-0">
             <Logo />

@@ -20,6 +20,13 @@ function toDayArray(day) {
   return Array.isArray(day) ? day : [day];
 }
 
+function roomsClearHref(sort) {
+  const params = new URLSearchParams();
+  if (sort && sort !== "newest") params.set("sort", sort);
+  const query = params.toString();
+  return query ? `/rooms?${query}` : "/rooms";
+}
+
 export default async function RoomsPage({ searchParams }) {
   const params = await searchParams;
   const suburb = params.suburb ?? "";
@@ -27,6 +34,8 @@ export default async function RoomsPage({ searchParams }) {
   const days = toDayArray(params.day);
   const max = params.max ?? "";
   const sort = parseRoomSort(params.sort);
+  const hasFilters = Boolean(suburb || type || days.length || max);
+  const clearHref = roomsClearHref(sort);
   const rooms = sortPublishedRooms(
     await getPublishedRooms({ suburb, type, days, max }),
     sort,
@@ -62,10 +71,20 @@ export default async function RoomsPage({ searchParams }) {
 
       <div className="mx-auto max-w-6xl px-4 pt-12 pb-12 sm:px-6 lg:px-8 2xl:max-w-page-inset min-[1720px]:!max-w-[106rem]">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm font-medium text-stone-500">
-            {rooms.length} {rooms.length === 1 ? "room" : "rooms"}
-            {suburb ? ` in ${suburb}` : " across Melbourne"}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="text-sm font-medium text-stone-500">
+              {rooms.length} {rooms.length === 1 ? "room" : "rooms"}
+              {suburb ? ` in ${suburb}` : " across Melbourne"}
+            </p>
+            {hasFilters ? (
+              <Link
+                href={clearHref}
+                className="text-sm font-bold text-teal-950 hover:underline"
+              >
+                Clear filters
+              </Link>
+            ) : null}
+          </div>
           {rooms.length > 0 ? <RoomSortSelect /> : null}
         </div>
 
@@ -73,12 +92,14 @@ export default async function RoomsPage({ searchParams }) {
           <FadeIn delay={0.16}>
             <div className="rounded-2xl border border-stone-200 bg-white p-10 text-center">
               <p className="text-stone-700">No rooms match these filters.</p>
-              <Link
-                href="/rooms"
-                className="mt-3 inline-block text-sm font-bold text-teal-950 hover:underline"
-              >
-                Clear filters
-              </Link>
+              {hasFilters ? (
+                <Link
+                  href={clearHref}
+                  className="mt-3 inline-block text-sm font-bold text-teal-950 hover:underline"
+                >
+                  Clear filters
+                </Link>
+              ) : null}
             </div>
           </FadeIn>
         ) : (

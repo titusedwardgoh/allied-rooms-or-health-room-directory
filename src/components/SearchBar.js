@@ -122,6 +122,9 @@ export default function SearchBar({
   const [searching, setSearching] = useState(false);
   const searchTimerRef = useRef(null);
   const daysKey = (days ?? []).join(",");
+  const hasLocalFilters = Boolean(
+    inputSuburb.trim() || selectedType || selectedDays.length || maxPrice,
+  );
 
   function openPanel(id, el) {
     const form = formRef.current;
@@ -147,29 +150,58 @@ export default function SearchBar({
     setActive(null);
   }
 
+  function roomsHref({
+    nextSuburb = inputSuburb,
+    nextType = selectedType,
+    nextDays = selectedDays,
+    nextMax = maxPrice,
+  } = {}) {
+    const params = new URLSearchParams();
+    if (nextSuburb.trim()) params.set("suburb", nextSuburb.trim());
+    if (nextType) params.set("type", nextType);
+    if (nextMax) params.set("max", nextMax);
+    if (sort && sort !== "newest") params.set("sort", sort);
+    nextDays.forEach((d) => d && params.append("day", d));
+    const query = params.toString();
+    return query ? `/rooms?${query}` : "/rooms";
+  }
+
+  function currentRoomsHref() {
+    const params = new URLSearchParams();
+    if (suburb.trim()) params.set("suburb", suburb.trim());
+    if (roomType) params.set("type", roomType);
+    if (maxPrice) params.set("max", maxPrice);
+    if (sort && sort !== "newest") params.set("sort", sort);
+    (days ?? []).forEach((d) => d && params.append("day", d));
+    const query = params.toString();
+    return query ? `/rooms?${query}` : "/rooms";
+  }
+
+  function clearFilters() {
+    setInputSuburb("");
+    setSelectedType("");
+    setSelectedDays([]);
+    setActive(null);
+    setMobileOpen(false);
+
+    if (pathname !== "/rooms") return;
+
+    const href = roomsHref({
+      nextSuburb: "",
+      nextType: "",
+      nextDays: [],
+      nextMax: "",
+    });
+    if (href === currentRoomsHref()) return;
+    router.push(href);
+  }
+
   function handleSearch(e) {
     e.preventDefault();
     if (searching) return;
 
-    const params = new URLSearchParams();
-
-    if (inputSuburb.trim()) params.set("suburb", inputSuburb.trim());
-    if (selectedType) params.set("type", selectedType);
-    if (maxPrice) params.set("max", maxPrice);
-    if (sort && sort !== "newest") params.set("sort", sort);
-    selectedDays.forEach((d) => d && params.append("day", d));
-
-    const query = params.toString();
-    const href = query ? `/rooms?${query}` : "/rooms";
-    if (pathname === "/rooms") {
-      const current = new URLSearchParams();
-      if (suburb.trim()) current.set("suburb", suburb.trim());
-      if (roomType) current.set("type", roomType);
-      if (maxPrice) current.set("max", maxPrice);
-      if (sort && sort !== "newest") current.set("sort", sort);
-      (days ?? []).forEach((d) => d && current.append("day", d));
-      if (current.toString() === query) return;
-    }
+    const href = roomsHref();
+    if (pathname === "/rooms" && href === currentRoomsHref()) return;
 
     setActive(null);
     setMobileOpen(false);
@@ -187,6 +219,9 @@ export default function SearchBar({
 
   useEffect(() => {
     setSearching(false);
+    setInputSuburb(suburb);
+    setSelectedType(roomType);
+    setSelectedDays(daysKey ? daysKey.split(",") : []);
   }, [suburb, roomType, maxPrice, sort, daysKey]);
 
   useEffect(() => {
@@ -333,10 +368,19 @@ export default function SearchBar({
               )}
             </div>
 
-            <div className="border-t border-stone-200 bg-stone-100 px-4 py-3">
+            <div className="flex items-center gap-3 border-t border-stone-200 bg-stone-100 px-4 py-3">
+              {hasLocalFilters ? (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="cursor-pointer px-2 py-2 text-sm font-bold text-stone-700 underline-offset-2 hover:underline"
+                >
+                  Clear all
+                </button>
+              ) : null}
               <button
                 type="submit"
-                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-teal-900 py-3.5 text-sm font-semibold text-white"
+                className="flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-teal-900 py-3.5 text-sm font-semibold text-white"
               >
                 <Search className="size-4" strokeWidth={2.25} />
                 Search

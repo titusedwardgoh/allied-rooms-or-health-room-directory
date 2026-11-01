@@ -12,6 +12,14 @@ const MARKETPLACE = [
   { href: "/list-a-room", label: "List a Room" },
 ];
 
+const TOP_LOCATIONS = [
+  { href: "/locations/camberwell", label: "Camberwell" },
+  { href: "/locations/richmond", label: "Richmond" },
+  { href: "/locations/south-yarra", label: "South Yarra" },
+  { href: "/locations/southbank", label: "Southbank" },
+  { href: "/locations", label: "View all locations →" },
+];
+
 const COMPANY = [
   { href: "/about", label: "About Us" },
   { href: "/faq", label: "FAQ" },
@@ -62,6 +70,19 @@ export default function Footer() {
               {MARKETPLACE.map((link) => (
                 <li key={link.href}>
                   <Link href={link.href} className={LINK_CLASS}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </FooterColumn>
+
+            <FooterColumn title="Top Locations">
+              {TOP_LOCATIONS.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-stone-600 transition-colors hover:text-teal-950"
+                  >
                     {link.label}
                   </Link>
                 </li>

@@ -1,4 +1,5 @@
 import { getPublishedRooms } from "@/lib/db/rooms";
+import { locationHubList } from "@/lib/locations";
 import { SITE_URL } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ const STATIC_ROUTES = [
   { path: "/faq", priority: 0.8 },
   { path: "/contact", priority: 0.8 },
   { path: "/list-a-room", priority: 0.8 },
+  { path: "/locations", priority: 0.8 },
   { path: "/privacy", priority: 0.3 },
   { path: "/terms", priority: 0.3 },
 ];
@@ -21,6 +23,13 @@ export default async function sitemap() {
     lastModified: now,
     changeFrequency: "weekly",
     priority,
+  }));
+
+  const locationRoutes = locationHubList().map((hub) => ({
+    url: `${SITE_URL}/locations/${hub.slug}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.8,
   }));
 
   let roomRoutes = [];
@@ -38,5 +47,5 @@ export default async function sitemap() {
     console.error("sitemap rooms:", error?.message || error);
   }
 
-  return [...staticRoutes, ...roomRoutes];
+  return [...staticRoutes, ...locationRoutes, ...roomRoutes];
 }

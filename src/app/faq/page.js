@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FadeIn, FadeInOnView } from "@/components/FadeIn";
+import { FadeIn, FadeInOnView, Stagger, StaggerItem } from "@/components/FadeIn";
 import FaqAccordion from "@/components/FaqAccordion";
 import { CONTACT_EMAIL } from "@/lib/contact";
 
@@ -107,21 +107,29 @@ export default function FaqPage() {
   return (
     <main className="min-h-screen bg-stone-50/60">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <FadeIn className="mx-auto max-w-2xl text-center">
-          <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
-            FAQ
-          </span>
-          <h1 className="mt-2 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl">
-            Frequently asked questions
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-stone-600">
-            How the directory works if you are looking for a sessional room, or
-            listing unused clinic space in Melbourne.
-          </p>
-        </FadeIn>
+        <div className="mx-auto max-w-2xl text-center">
+          <FadeIn>
+            <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
+              FAQ
+            </span>
+          </FadeIn>
 
-        <div className="mt-10 grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
-          <FadeInOnView className="h-full">
+          <FadeIn delay={0.08}>
+            <h1 className="mt-2 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl">
+              Frequently asked questions
+            </h1>
+          </FadeIn>
+
+          <FadeIn delay={0.16}>
+            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-stone-600">
+              How the directory works if you are looking for a sessional room, or
+              listing unused clinic space in Melbourne.
+            </p>
+          </FadeIn>
+        </div>
+
+        <Stagger delay={0.24} className="mt-10 grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
+          <StaggerItem className="h-full">
             <section className="flex h-full flex-col rounded-2xl border border-stone-200 bg-white px-6 pb-6 shadow-sm sm:px-8">
               <h2 className="pt-6 font-sans text-xl font-black text-stone-900">
                 For practitioners
@@ -131,9 +139,9 @@ export default function FaqPage() {
               </p>
               <FaqAccordion items={PRACTITIONERS} />
             </section>
-          </FadeInOnView>
+          </StaggerItem>
 
-          <FadeInOnView className="h-full">
+          <StaggerItem className="h-full">
             <section className="flex h-full flex-col rounded-2xl border border-stone-200 bg-white px-6 pb-6 shadow-sm sm:px-8">
               <h2 className="pt-6 font-sans text-xl font-black text-stone-900">
                 For clinic hosts
@@ -143,10 +151,10 @@ export default function FaqPage() {
               </p>
               <FaqAccordion items={HOSTS} />
             </section>
-          </FadeInOnView>
-        </div>
+          </StaggerItem>
+        </Stagger>
 
-        <FadeInOnView className="mt-12 text-center text-sm text-stone-600">
+        <FadeInOnView delay={0.32} className="mt-12 text-center text-sm text-stone-600">
           <p className="leading-relaxed">
             Still have a question?{" "}
             <Link

@@ -550,5 +550,6 @@ export async function createRoomListing(prevState, formData) {
   revalidatePath("/rooms");
   revalidatePath(`/rooms/${savedSlug}`);
   revalidatePath(`/list-a-room`);
+  revalidatePath(`/list-a-room/new`);
   redirect(`/rooms/${savedSlug}`);
 }

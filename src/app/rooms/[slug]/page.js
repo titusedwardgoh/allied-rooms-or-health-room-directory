@@ -62,7 +62,7 @@ Sent via AlliedRooms`;
       <PublishListingBar
         slug={room.slug}
         isDraft={isDraft}
-        editHref={`/list-a-room?edit=${encodeURIComponent(room.slug)}`}
+        editHref={`/list-a-room/new?edit=${encodeURIComponent(room.slug)}`}
       />
       <main className="mx-auto max-w-6xl px-6 py-10 sm:px-8 2xl:max-w-page-inset">
       <BackButton />

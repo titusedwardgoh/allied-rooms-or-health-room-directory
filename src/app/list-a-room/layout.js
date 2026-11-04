@@ -1,23 +1,9 @@
-import { Suspense } from "react";
-
 export const metadata = {
-  title: "List a Room",
+  title: "List Sessional Consulting Rooms & Therapy Suites",
   description:
-    "Publish a sessional allied health consulting room with a public day rate.",
+    "Monetise empty clinical days with zero commission, direct practitioner inquiries, and full control over your schedule. List your Melbourne practice space.",
 };
 
 export default function ListARoomLayout({ children }) {
-  return (
-    <Suspense
-      fallback={
-        <main className="min-h-screen bg-stone-50/60">
-          <div className="mx-auto max-w-6xl px-4 py-12 text-center sm:px-6 lg:px-8">
-            <p className="text-sm text-stone-500">Loading listing form…</p>
-          </div>
-        </main>
-      }
-    >
-      {children}
-    </Suspense>
-  );
+  return children;
 }

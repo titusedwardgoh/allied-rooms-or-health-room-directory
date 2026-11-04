@@ -32,7 +32,7 @@ export default function SiteHeader() {
   const pathname = usePathname();
   const draftPreview = useListingFlow();
   const listingFlow =
-    pathname === "/list-a-room" ||
+    pathname === "/list-a-room/new" ||
     (/^\/rooms\/[^/]+$/.test(pathname) && draftPreview);
   const [entered, setEntered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -107,7 +107,7 @@ export default function SiteHeader() {
             <Link
               href="/"
               aria-label={
-                pathname === "/list-a-room"
+                pathname === "/list-a-room/new"
                   ? "Close listing form"
                   : "Close draft preview"
               }

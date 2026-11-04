@@ -74,29 +74,37 @@ export default function ContactPage() {
   return (
     <main className="min-h-screen bg-stone-50/60">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <FadeIn className="mx-auto max-w-2xl text-center">
-          <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
-            Contact
-          </span>
-          <h1 className="mt-2 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl">
-            Get in touch
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-stone-600">
-            Questions about listing a room, finding a space, or the directory
-            itself? Send a note and we will get back to you.
-          </p>
-          <p className="mt-3 text-sm text-stone-600">
-            Prefer email?{" "}
-            <a
-              href={`mailto:${CONTACT_EMAIL}`}
-              className="font-semibold text-teal-950 hover:underline"
-            >
-              {CONTACT_EMAIL}
-            </a>
-          </p>
-        </FadeIn>
+        <div className="mx-auto max-w-2xl text-center">
+          <FadeIn>
+            <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
+              Contact
+            </span>
+          </FadeIn>
 
-        <FadeIn delay={0.1} className="mx-auto mt-10 max-w-3xl">
+          <FadeIn delay={0.08}>
+            <h1 className="mt-2 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl">
+              Get in touch
+            </h1>
+          </FadeIn>
+
+          <FadeIn delay={0.16}>
+            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-stone-600">
+              Questions about listing a room, finding a space, or the directory
+              itself? Send a note and we will get back to you.
+            </p>
+            <p className="mt-3 text-sm text-stone-600">
+              Prefer email?{" "}
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                className="font-semibold text-teal-950 hover:underline"
+              >
+                {CONTACT_EMAIL}
+              </a>
+            </p>
+          </FadeIn>
+        </div>
+
+        <FadeIn delay={0.24} className="mx-auto mt-10 max-w-3xl">
           {sent ? (
             <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm sm:p-12">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-teal-900 text-white shadow-lg shadow-teal-900/20 ring-8 ring-teal-900/10">

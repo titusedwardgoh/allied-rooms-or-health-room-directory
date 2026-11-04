@@ -74,7 +74,7 @@ export function useLeaveListingGuard({ active, allowLeaveRef }) {
       }
 
       if (url.origin !== window.location.origin) return;
-      if (url.pathname === "/list-a-room") return;
+      if (url.pathname === "/list-a-room/new") return;
 
       event.preventDefault();
       event.stopPropagation();

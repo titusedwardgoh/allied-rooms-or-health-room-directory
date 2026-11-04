@@ -39,21 +39,29 @@ export default function AboutPage() {
   return (
     <main className="min-h-screen bg-stone-50/60">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <FadeIn className="mx-auto max-w-4xl text-center">
-          <span className="inline-block rounded-full bg-stone-200/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-stone-700">
-            About AlliedRooms
-          </span>
-          <h1 className="mt-6 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl sm:leading-[1.1]">
-            Sessional clinical spaces,<br className="hidden sm:inline" />{" "}
-            <span className="text-teal-900">without the lease</span>
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-stone-600 sm:text-lg">
-            Melbourne’s direct directory for allied health and therapy rooms —
-            connected straight with clinic hosts.
-          </p>
-        </FadeIn>
+        <div className="mx-auto max-w-4xl text-center">
+          <FadeIn>
+            <span className="inline-block rounded-full bg-stone-200/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-stone-700">
+              About AlliedRooms
+            </span>
+          </FadeIn>
 
-        <FadeInOnView className="mx-auto mt-12 max-w-3xl">
+          <FadeIn delay={0.08}>
+            <h1 className="mt-6 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl sm:leading-[1.1]">
+              Sessional clinical spaces,<br className="hidden sm:inline" />{" "}
+              <span className="text-teal-900">without the lease</span>
+            </h1>
+          </FadeIn>
+
+          <FadeIn delay={0.16}>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-stone-600 sm:text-lg">
+              Melbourne’s direct directory for allied health and therapy rooms —
+              connected straight with clinic hosts.
+            </p>
+          </FadeIn>
+        </div>
+
+        <FadeInOnView delay={0.24} className="mx-auto mt-12 max-w-3xl">
           <section className="rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-sm sm:p-10">
             <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
               Why AlliedRooms
@@ -77,7 +85,7 @@ export default function AboutPage() {
         </FadeInOnView>
 
         <section className="mt-12 sm:mt-16">
-          <FadeInOnView className="mb-6 text-center">
+          <FadeInOnView delay={0.08} className="mb-6 text-center">
             <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
               The platform
             </span>
@@ -86,7 +94,7 @@ export default function AboutPage() {
             </h2>
           </FadeInOnView>
 
-          <Stagger className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <Stagger delay={0.16} className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             {PILLARS.map((pillar) => {
               const Icon = pillar.icon;
               return (
@@ -118,7 +126,7 @@ export default function AboutPage() {
           </Stagger>
         </section>
 
-        <FadeInOnView className="mt-12 sm:mt-16">
+        <FadeInOnView delay={0.24} className="mt-12 sm:mt-16">
           <aside className="flex flex-col items-center justify-between gap-6 rounded-2xl bg-[#0f4c45] p-8 text-center text-white sm:flex-row sm:p-10 sm:text-left">
             <div className="max-w-xl">
               <h2 className="font-sans text-2xl font-black tracking-tight sm:text-3xl">

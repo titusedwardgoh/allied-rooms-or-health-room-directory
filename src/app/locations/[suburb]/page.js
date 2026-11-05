@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import { notFound } from "next/navigation";
 import { FadeIn, FadeInOnView, Stagger, StaggerItem } from "@/components/FadeIn";
 import FaqAccordion from "@/components/FaqAccordion";
+import LocationAlertCard from "@/components/LocationAlertCard";
 import RoomCard from "@/components/RoomCard";
 import { getPublishedRooms } from "@/lib/db/rooms";
 import { formatAUDFromCents } from "@/lib/format";
@@ -11,6 +12,7 @@ import {
   getLocationHub,
   locationFaqJsonLd,
   locationHubList,
+  locationItemListJsonLd,
   locationListingStats,
 } from "@/lib/locations";
 import { SITE_URL } from "@/lib/site";
@@ -42,16 +44,16 @@ export async function generateMetadata({ params }) {
   }
 
   return {
-    title: { absolute: hub.metaTitle },
+    title: hub.metaTitle,
     description: hub.metaDescription,
     alternates: { canonical: `${SITE_URL}/locations/${hub.slug}` },
     openGraph: {
-      title: hub.metaTitle,
+      title: `${hub.metaTitle} | AlliedRooms`,
       description: hub.metaDescription,
-      url: `/locations/${hub.slug}`,
-      type: "website",
-      locale: "en_AU",
+      url: `${SITE_URL}/locations/${hub.slug}`,
       siteName: "AlliedRooms",
+      locale: "en_AU",
+      type: "website",
       images: hub.ogImage ? [{ url: hub.ogImage }] : undefined,
     },
   };
@@ -80,6 +82,15 @@ export default async function LocationHubPage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(locationFaqJsonLd(hub)).replace(
+            /</g,
+            "\\u003c",
+          ),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(locationItemListJsonLd(hub, rooms)).replace(
             /</g,
             "\\u003c",
           ),
@@ -151,12 +162,6 @@ export default async function LocationHubPage({ params }) {
                   >
                     List a Room
                   </Link>
-                  <Link
-                    href="/contact"
-                    className="rounded-full border border-stone-900 bg-white px-5 py-2.5 text-sm font-semibold text-stone-900 hover:bg-stone-100"
-                  >
-                    Get notified when rooms open up
-                  </Link>
                 </div>
               </div>
             </FadeInOnView>
@@ -170,6 +175,8 @@ export default async function LocationHubPage({ params }) {
             </Stagger>
           )}
         </section>
+
+        <LocationAlertCard name={hub.name} slug={hub.slug} />
 
         <FadeInOnView className="mt-12 sm:mt-16">
           <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-10">

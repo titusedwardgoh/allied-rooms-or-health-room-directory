@@ -26,6 +26,7 @@ const SECTIONS = [
       "Room listing: practice name, contact email, phone (optional), website, room title, address, suburb, rate, availability, amenities, description, and photos.",
       "Listing enquiries: name, email, phone (optional), message, and the listing you enquired about.",
       "Incomplete listings: if you start List a Room and continue past the first steps, we may keep the practice details you entered so we can follow up.",
+      "Suburb room alerts: email address, suburb, and preferred days (optional).",
     ],
   },
   {
@@ -33,6 +34,7 @@ const SECTIONS = [
     body: [
       "Messages sent through the contact form or a listing enquiry are emailed to us (and, for listing enquiries, to the host) using Resend. We also store a copy in our database so we can reply and keep a record of the request.",
       "We use this information only to respond to you, to pass a listing enquiry to the relevant host, and to operate the directory. We do not sell it.",
+      "Suburb alert sign-ups are stored so we can email you about listings in that suburb. We send a confirmation email when you join the list. Matching-room emails from that list are not sent automatically yet.",
     ],
   },
   {
@@ -45,7 +47,7 @@ const SECTIONS = [
   {
     title: "How we store and process data",
     body: [
-      "The site is hosted on Vercel. Listing, profile, enquiry, and photo data are stored with Supabase. Emails are sent with Resend. Address autocomplete on List a Room uses Google Maps / Places.",
+      "The site is hosted on Vercel. Listing, profile, enquiry, photo, and suburb-alert data are stored with Supabase. Emails are sent with Resend. Address autocomplete on List a Room uses Google Maps / Places.",
       "These providers may process data on servers outside Australia, including in the United States. We use them only to operate AlliedRooms.",
     ],
   },
@@ -58,7 +60,7 @@ const SECTIONS = [
   {
     title: "How long we keep information",
     body: [
-      "Published listings stay until you ask us to take them down or we remove them. Enquiry and contact records are kept as long as needed to handle the request and run the service. You can ask us to delete or correct your information at any time.",
+      "Published listings stay until you ask us to take them down or we remove them. Enquiry, contact, and suburb-alert records are kept as long as needed to handle the request and run the service. You can ask us to delete or correct your information at any time.",
     ],
   },
   {

@@ -1,4 +1,5 @@
 import { SUBURB_HUBS } from "@/lib/hubs";
+import { SITE_URL } from "@/lib/site";
 
 function createLocationHub({
   slug,
@@ -20,7 +21,7 @@ function createLocationHub({
     pill: `Location Hub · ${name}`,
     h1: `Sessional Consulting Rooms for Rent in ${name}`,
     subtitle,
-    metaTitle: `Sessional Consulting Rooms for Rent in ${name} | AlliedRooms`,
+    metaTitle: `Sessional Consulting Rooms for Rent in ${name}`,
     metaDescription: `Find sessional therapy rooms, psychology suites, and allied health spaces in ${name}, Melbourne. Direct host contact, transparent day rates, and zero long leases.`,
     ogImage: image,
     typicalMinCents,
@@ -264,5 +265,38 @@ export function locationFaqJsonLd(hub) {
         text: item.answer,
       },
     })),
+  };
+}
+
+export function locationItemListJsonLd(hub, rooms) {
+  const listings = rooms || [];
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `Sessional Consulting Rooms in ${hub.name}, Melbourne`,
+    description: `Directory of sessional therapy suites and allied health consulting rooms for rent in ${hub.name}.`,
+    url: `${SITE_URL}/locations/${hub.slug}`,
+    numberOfItems: listings.length,
+    itemListElement: listings.map((room, index) => {
+      const cents = Number(room.price_per_day_cents) || 0;
+      const item = {
+        "@type": "RealEstateListing",
+        name: room.title,
+        url: `${SITE_URL}/rooms/${room.slug}`,
+      };
+      if (cents > 0) {
+        item.offers = {
+          "@type": "Offer",
+          price: cents / 100,
+          priceCurrency: "AUD",
+          availability: "https://schema.org/InStock",
+        };
+      }
+      return {
+        "@type": "ListItem",
+        position: index + 1,
+        item,
+      };
+    }),
   };
 }

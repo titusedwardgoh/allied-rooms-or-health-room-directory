@@ -5,6 +5,7 @@ import { render } from "@react-email/render";
 import { Resend } from "resend";
 import HostInquiryEmail from "@/emails/HostInquiryEmail";
 import UserConfirmationEmail from "@/emails/UserConfirmationEmail";
+import { notifyAdmin } from "@/lib/adminNotify";
 import { logInquiry, markInquiry } from "@/lib/db/inquiries";
 import { getRoomBySlug } from "@/lib/db/rooms";
 import { MAIL_FROM, SITE_URL } from "@/lib/site";
@@ -120,6 +121,21 @@ export async function sendListingInquiry(payload) {
       hostEmail,
       listingTitle: room.title,
       listingUrl,
+    });
+    await notifyAdmin({
+      subject: `[AlliedRooms] Inquiry — ${room.title}`,
+      lines: [
+        "A practitioner inquired about a listing.",
+        "",
+        `Listing: ${room.title}`,
+        `Suburb: ${room.suburb || "—"}`,
+        `Host: ${clinicName}`,
+        `From: ${name}`,
+        `Email: ${email}`,
+        ...(phone ? [`Phone: ${phone}`] : []),
+        "",
+        listingUrl,
+      ],
     });
     return { ok: true };
   } catch (error) {

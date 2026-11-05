@@ -4,6 +4,7 @@ import { createElement } from "react";
 import { render } from "@react-email/render";
 import { Resend } from "resend";
 import SuburbAlertConfirmationEmail from "@/emails/SuburbAlertConfirmationEmail";
+import { notifyAdmin } from "@/lib/adminNotify";
 import { CONTACT_EMAIL } from "@/lib/contact";
 import { upsertRoomAlert } from "@/lib/db/alerts";
 import { DAY_LABEL, orderedDays } from "@/lib/format";
@@ -119,6 +120,19 @@ export async function captureRoomAlert(formData) {
       email,
       hub,
       days,
+    });
+
+    await notifyAdmin({
+      subject: `[AlliedRooms] Room alert — ${hub.name}`,
+      lines: [
+        "Someone joined a suburb room list.",
+        "",
+        `Suburb: ${hub.name}`,
+        `Email: ${email}`,
+        `Preferred days: ${daysLabel(days)}`,
+        "",
+        `${SITE_URL}/locations/${hub.slug}`,
+      ],
     });
 
     return { ok: true, emailed };

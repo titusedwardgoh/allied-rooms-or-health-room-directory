@@ -68,12 +68,21 @@ export default async function LocationHubPage({ params }) {
   const stats = locationListingStats(rooms, hub.typicalMinCents);
   const heroImage = hub.image || "/images/clinic-hero.jpg";
   const metrics = [
-    { label: "Active Spaces", value: String(stats.count) },
     {
-      label: "Rates from",
+      mobileLabel: "Rooms",
+      desktopLabel: "Rooms Available",
+      value: String(stats.count),
+    },
+    {
+      mobileLabel: "Rates From",
+      desktopLabel: "Rates from",
       value: `${formatAUDFromCents(stats.minCents)}/day`,
     },
-    { label: "Zero Commission Fees", value: "$0" },
+    {
+      mobileLabel: "Fees",
+      desktopLabel: "Zero Commission Fees",
+      value: "$0",
+    },
   ];
 
   return (
@@ -98,35 +107,20 @@ export default async function LocationHubPage({ params }) {
       />
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <FadeIn className="relative overflow-hidden rounded-3xl border border-stone-200 bg-white p-8 text-stone-900 shadow-md sm:p-12">
-          <div className="relative z-10 grid grid-cols-1 items-center gap-8 lg:grid-cols-12">
-            <div className="lg:col-span-7">
+          <div className="relative z-10 grid grid-cols-1 items-center gap-6 lg:grid-cols-12 lg:gap-8">
+            <div className="text-center lg:col-span-7 lg:row-start-1 lg:text-left">
               <span className="inline-block rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-stone-600">
                 {hub.pill}
               </span>
               <h1 className="mt-4 font-sans text-3xl font-black tracking-tight text-stone-900 sm:text-4xl sm:leading-tight">
                 {hub.h1}
               </h1>
-              <p className="mt-3 text-sm leading-relaxed text-stone-600 sm:text-base">
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-stone-600 sm:text-base lg:mx-0">
                 {hub.subtitle}
               </p>
-              <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {metrics.map((metric) => (
-                  <div
-                    key={metric.label}
-                    className="rounded-2xl border border-stone-200 bg-stone-50 p-4 text-center"
-                  >
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                      {metric.label}
-                    </p>
-                    <p className="mt-1 font-sans text-xl font-black text-stone-900">
-                      {metric.value}
-                    </p>
-                  </div>
-                ))}
-              </div>
             </div>
 
-            <div className="lg:col-span-5">
+            <div className="lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1">
               <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-stone-200 shadow-lg sm:aspect-[4/3]">
                 <img
                   src={heroImage}
@@ -136,11 +130,28 @@ export default async function LocationHubPage({ params }) {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
               </div>
             </div>
+
+            <div className="grid grid-cols-3 gap-2 lg:col-span-7 lg:row-start-2 lg:gap-3">
+              {metrics.map((metric) => (
+                <div
+                  key={metric.desktopLabel}
+                  className="flex h-full min-h-[4.75rem] flex-col items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 px-1.5 py-3 text-center sm:min-h-[5.5rem] sm:p-4"
+                >
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400 sm:text-[10px]">
+                    <span className="lg:hidden">{metric.mobileLabel}</span>
+                    <span className="hidden lg:inline">{metric.desktopLabel}</span>
+                  </p>
+                  <p className="mt-1 font-sans text-base font-black text-stone-900 sm:text-xl">
+                    {metric.value}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </FadeIn>
 
         <section className="mt-12 sm:mt-16">
-          <FadeInOnView className="mb-6">
+          <FadeInOnView className="mb-6 text-center lg:text-left">
             <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
               Listings
             </span>
@@ -157,8 +168,14 @@ export default async function LocationHubPage({ params }) {
                 </p>
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                   <Link
-                    href="/list-a-room"
+                    href="/rooms"
                     className="rounded-full bg-teal-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-950"
+                  >
+                    Find a Room
+                  </Link>
+                  <Link
+                    href="/list-a-room"
+                    className="rounded-full border border-stone-900 bg-white px-5 py-2.5 text-sm font-semibold text-stone-900 hover:bg-stone-100"
                   >
                     List a Room
                   </Link>
@@ -180,12 +197,14 @@ export default async function LocationHubPage({ params }) {
 
         <FadeInOnView className="mt-12 sm:mt-16">
           <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-10">
-            <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
-              Market insights
-            </span>
-            <h2 className="mt-2 font-sans text-2xl font-black text-stone-900">
-              Practising in {hub.name}
-            </h2>
+            <div className="text-center lg:text-left">
+              <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
+                Market insights
+              </span>
+              <h2 className="mt-2 font-sans text-2xl font-black text-stone-900">
+                Practising in {hub.name}
+              </h2>
+            </div>
             <div className="mt-4 space-y-4 text-base leading-relaxed text-stone-600">
               {hub.overview.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
@@ -196,10 +215,10 @@ export default async function LocationHubPage({ params }) {
 
         <FadeInOnView className="mt-12 sm:mt-16">
           <section className="rounded-2xl border border-stone-200 bg-white px-6 pb-6 shadow-sm sm:px-8">
-            <h2 className="pt-6 font-sans text-xl font-black text-stone-900">
+            <h2 className="pt-6 text-center font-sans text-xl font-black text-stone-900 lg:text-left">
               {hub.name} FAQs
             </h2>
-            <p className="mt-1 text-sm text-stone-500">
+            <p className="mt-1 text-center text-sm text-stone-500 lg:text-left">
               Sessional hire, rates, and how to inspect a room.
             </p>
             <FaqAccordion items={hub.faqs} />
@@ -207,14 +226,14 @@ export default async function LocationHubPage({ params }) {
         </FadeInOnView>
 
         <FadeInOnView className="mt-12 sm:mt-16">
-          <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
+          <section className="rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-sm sm:p-8 lg:text-left">
             <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
               Nearby
             </span>
             <h2 className="mt-2 font-sans text-2xl font-black text-stone-900">
               Other Melbourne suburbs
             </h2>
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="mt-5 flex flex-wrap justify-center gap-2 lg:justify-start">
               {hub.nearby.map((place) => (
                 <Link
                   key={place.name}

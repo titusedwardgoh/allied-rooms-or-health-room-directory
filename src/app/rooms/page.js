@@ -1,11 +1,8 @@
-import Link from "next/link";
+import { Suspense } from "react";
 import MarkListingOrigin from "@/components/MarkListingOrigin";
-import RoomCard from "@/components/RoomCard";
-import RoomSortSelect from "@/components/RoomSortSelect";
 import SearchBar from "@/components/SearchBar";
-import { FadeIn, Stagger, StaggerItem } from "@/components/FadeIn";
-import { getPublishedRooms } from "@/lib/db/rooms";
-import { parseRoomSort, sortPublishedRooms } from "@/lib/roomsSort";
+import { parseRoomSort } from "@/lib/roomsSort";
+import RoomsResults, { RoomsResultsFallback } from "./RoomsResults";
 
 export const dynamic = "force-dynamic";
 
@@ -36,16 +33,15 @@ export default async function RoomsPage({ searchParams }) {
   const sort = parseRoomSort(params.sort);
   const hasFilters = Boolean(suburb || type || days.length || max);
   const clearHref = roomsClearHref(sort);
-  const rooms = sortPublishedRooms(
-    await getPublishedRooms({ suburb, type, days, max }),
-    sort,
-  );
+  const resultsKey = [suburb, type, days.join(","), max, sort].join("|");
 
   return (
     <main className="min-h-screen bg-stone-50">
-      <MarkListingOrigin from="search" />
+      <Suspense fallback={null}>
+        <MarkListingOrigin from="search" />
+      </Suspense>
       <div className="mx-auto max-w-6xl px-4 pt-12 sm:px-6 lg:px-8 2xl:max-w-page-inset">
-        <FadeIn className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto max-w-2xl text-center">
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
             Directory
           </span>
@@ -56,9 +52,9 @@ export default async function RoomsPage({ searchParams }) {
             Browse sessional allied health rooms across Melbourne by suburb,
             day, and daily rate.
           </p>
-        </FadeIn>
+        </div>
 
-        <FadeIn delay={0.1} className="mt-12">
+        <div className="mt-12">
           <SearchBar
             suburb={suburb}
             roomType={type}
@@ -66,51 +62,21 @@ export default async function RoomsPage({ searchParams }) {
             maxPrice={max}
             sort={sort}
           />
-        </FadeIn>
+        </div>
       </div>
 
       <div className="mx-auto max-w-6xl px-4 pt-12 pb-12 sm:px-6 lg:px-8 2xl:max-w-page-inset min-[1720px]:!max-w-[106rem]">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <p className="text-sm font-medium text-stone-500">
-              {rooms.length} {rooms.length === 1 ? "room" : "rooms"}
-              {suburb ? ` in ${suburb}` : " across Melbourne"}
-            </p>
-            {hasFilters ? (
-              <Link
-                href={clearHref}
-                className="text-sm font-bold text-teal-950 hover:underline"
-              >
-                Clear filters
-              </Link>
-            ) : null}
-          </div>
-          {rooms.length > 0 ? <RoomSortSelect /> : null}
-        </div>
-
-        {rooms.length === 0 ? (
-          <FadeIn delay={0.16}>
-            <div className="rounded-2xl border border-stone-200 bg-white p-10 text-center">
-              <p className="text-stone-700">No rooms match these filters.</p>
-              {hasFilters ? (
-                <Link
-                  href={clearHref}
-                  className="mt-3 inline-block text-sm font-bold text-teal-950 hover:underline"
-                >
-                  Clear filters
-                </Link>
-              ) : null}
-            </div>
-          </FadeIn>
-        ) : (
-          <Stagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 min-[1720px]:!grid-cols-4">
-            {rooms.map((room) => (
-              <StaggerItem key={room.id} className="h-full">
-                <RoomCard room={room} />
-              </StaggerItem>
-            ))}
-          </Stagger>
-        )}
+        <Suspense key={resultsKey} fallback={<RoomsResultsFallback />}>
+          <RoomsResults
+            suburb={suburb}
+            type={type}
+            days={days}
+            max={max}
+            sort={sort}
+            hasFilters={hasFilters}
+            clearHref={clearHref}
+          />
+        </Suspense>
       </div>
     </main>
   );

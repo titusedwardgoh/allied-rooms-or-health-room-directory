@@ -10,6 +10,7 @@ const LINK_CLASS =
 const MARKETPLACE = [
   { href: "/rooms", label: "Find a Room" },
   { href: "/list-a-room", label: "List a Room" },
+  { href: "/tools/sessional-room-calculator", label: "Room calculator" },
 ];
 
 const TOP_LOCATIONS = [

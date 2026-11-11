@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Stagger, StaggerItem } from "@/components/FadeIn";
 import { hrefForSuburb } from "@/lib/locations";
 
 export default function SuburbBento({ stats }) {
   if (!stats?.length) return null;
 
   return (
-    <div
+    <Stagger
       role="region"
       aria-label="Popular Melbourne hubs"
       className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain scroll-pl-6 px-6 pb-1 touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:scroll-pl-0 sm:px-0 sm:pb-0 lg:grid-cols-4"
@@ -15,15 +16,18 @@ export default function SuburbBento({ stats }) {
         const isFeatured = idx === 0;
 
         return (
-          <Link
+          <StaggerItem
             key={item.suburb}
-            href={hrefForSuburb(item.suburb)}
-            className={`group relative flex h-56 w-[78vw] shrink-0 snap-start flex-col justify-between overflow-hidden rounded-2xl p-6 transition-all duration-300 sm:h-auto sm:w-auto sm:hover:-translate-y-0.5 sm:hover:shadow-xl ${
+            className={
               isFeatured
-                ? "sm:col-span-2 sm:row-span-2 sm:min-h-[260px] 2xl:min-h-[340px]"
-                : "sm:min-h-[180px] 2xl:min-h-[220px]"
-            }`}
+                ? "h-56 w-[78vw] shrink-0 snap-start sm:col-span-2 sm:row-span-2 sm:h-full sm:min-h-[260px] sm:w-auto 2xl:min-h-[340px]"
+                : "h-56 w-[78vw] shrink-0 snap-start sm:h-full sm:min-h-[180px] sm:w-auto 2xl:min-h-[220px]"
+            }
           >
+            <Link
+              href={hrefForSuburb(item.suburb)}
+              className="group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl p-6 transition-all duration-300 sm:hover:-translate-y-0.5 sm:hover:shadow-xl"
+            >
             <Image
               src={item.image}
               alt=""
@@ -58,9 +62,10 @@ export default function SuburbBento({ stats }) {
                 </span>
               </div>
             </div>
-          </Link>
+            </Link>
+          </StaggerItem>
         );
       })}
-    </div>
+    </Stagger>
   );
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import PulseDots from "@/components/PulseDots";
 import RoomCard from "@/components/RoomCard";
 import RoomSortSelect from "@/components/RoomSortSelect";
 import { getPublishedRooms } from "@/lib/db/rooms";
@@ -32,27 +33,13 @@ export function RoomsResultsFallback() {
     <>
       <ResultsToolbar countLabel="Loading rooms…" />
       <div
-        className={GRID_CLASS}
+        className="flex min-h-[22rem] items-center justify-center sm:min-h-[28rem]"
+        role="status"
         aria-busy="true"
         aria-live="polite"
         aria-label="Loading rooms"
       >
-        {Array.from({ length: 6 }, (_, index) => (
-          <div
-            key={index}
-            className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white"
-          >
-            <div className="aspect-video animate-pulse bg-stone-200" />
-            <div className="p-5">
-              <div className="h-3 w-24 animate-pulse rounded bg-stone-200" />
-              <div className="mt-3 h-4 w-3/4 animate-pulse rounded bg-stone-200" />
-              <div className="mt-4 flex items-center gap-3 border-t border-stone-100 pt-3">
-                <div className="h-4 flex-1 animate-pulse rounded bg-stone-100" />
-                <div className="h-4 w-16 animate-pulse rounded bg-stone-200" />
-              </div>
-            </div>
-          </div>
-        ))}
+        <PulseDots />
       </div>
     </>
   );

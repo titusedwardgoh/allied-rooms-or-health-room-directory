@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { connection } from "next/server";
 import SearchBar from "@/components/SearchBar";
 import RoomCard from "@/components/RoomCard";
 import MarkListingOrigin from "@/components/MarkListingOrigin";
@@ -8,13 +10,54 @@ import { getFeaturedRooms, getSuburbStats } from "@/lib/db/rooms";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
-  const featured = await getFeaturedRooms(8);
+async function HomeHubs() {
+  await connection();
   const stats = await getSuburbStats();
+  return <SuburbBento stats={stats} />;
+}
+
+async function HomeFeatured() {
+  await connection();
+  const featured = await getFeaturedRooms(8);
+
+  if (!featured.length) return null;
 
   return (
+    <section className="mx-auto max-w-6xl px-6 py-6 sm:px-8 sm:py-12 2xl:max-w-page-inset min-[1720px]:!max-w-[106rem]">
+      <FadeInOnView className="mb-6 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
+            Highlights
+          </span>
+          <h2 className="font-display text-2xl font-bold text-stone-900">
+            Recently Listed Rooms
+          </h2>
+        </div>
+        <Link
+          href="/rooms"
+          className="text-sm font-bold text-teal-950 hover:underline"
+        >
+          View all →
+        </Link>
+      </FadeInOnView>
+
+      <Stagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 min-[1720px]:!grid-cols-4">
+        {featured.map((room) => (
+          <StaggerItem key={room.id} className="h-full">
+            <RoomCard room={room} />
+          </StaggerItem>
+        ))}
+      </Stagger>
+    </section>
+  );
+}
+
+export default function Home() {
+  return (
     <main className="min-h-screen bg-stone-50">
-      <MarkListingOrigin from="home" />
+      <Suspense fallback={null}>
+        <MarkListingOrigin from="home" />
+      </Suspense>
       <section className="relative px-6 pb-6 pt-12 sm:px-8 sm:pb-12 sm:pt-24 2xl:pt-32">
         <div className="mx-auto max-w-6xl text-center 2xl:max-w-page">
           <FadeIn>
@@ -32,7 +75,8 @@ export default async function Home() {
 
           <FadeIn delay={0.16}>
             <p className="mx-auto mt-4 max-w-xl text-base text-stone-600 sm:text-lg">
-            Book Professional Allied Health and Clinical Spaces across Melbourne with transparent daily rates and flexible terms.
+              Book Professional Allied Health and Clinical Spaces across
+              Melbourne with transparent daily rates and flexible terms.
             </p>
           </FadeIn>
 
@@ -51,35 +95,14 @@ export default async function Home() {
             Popular Melbourne Hubs
           </h2>
         </div>
-        <SuburbBento stats={stats} />
+        <Suspense fallback={<div className="min-h-[14rem] sm:min-h-[16rem]" />}>
+          <HomeHubs />
+        </Suspense>
       </FadeInOnView>
 
-      <section className="mx-auto max-w-6xl px-6 py-6 sm:px-8 sm:py-12 2xl:max-w-page-inset min-[1720px]:!max-w-[106rem]">
-        <FadeInOnView className="mb-6 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
-              Highlights
-            </span>
-            <h2 className="font-display text-2xl font-bold text-stone-900">
-              Recently Listed Rooms
-            </h2>
-          </div>
-          <Link
-            href="/rooms"
-            className="text-sm font-bold text-teal-950 hover:underline"
-          >
-            View all →
-          </Link>
-        </FadeInOnView>
-
-        <Stagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 min-[1720px]:!grid-cols-4">
-          {featured.map((room) => (
-            <StaggerItem key={room.id} className="h-full">
-              <RoomCard room={room} />
-            </StaggerItem>
-          ))}
-        </Stagger>
-      </section>
+      <Suspense fallback={null}>
+        <HomeFeatured />
+      </Suspense>
     </main>
   );
 }

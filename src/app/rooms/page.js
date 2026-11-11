@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import MarkListingOrigin from "@/components/MarkListingOrigin";
 import SearchBar from "@/components/SearchBar";
+import { FadeIn } from "@/components/FadeIn";
 import { parseRoomSort } from "@/lib/roomsSort";
 import RoomsResults, { RoomsResultsFallback } from "./RoomsResults";
 
@@ -41,7 +42,7 @@ export default async function RoomsPage({ searchParams }) {
         <MarkListingOrigin from="search" />
       </Suspense>
       <div className="mx-auto max-w-6xl px-4 pt-12 sm:px-6 lg:px-8 2xl:max-w-page-inset">
-        <div className="mx-auto max-w-2xl text-center">
+        <FadeIn className="mx-auto max-w-2xl text-center">
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
             Directory
           </span>
@@ -52,9 +53,9 @@ export default async function RoomsPage({ searchParams }) {
             Browse sessional allied health rooms across Melbourne by suburb,
             day, and daily rate.
           </p>
-        </div>
+        </FadeIn>
 
-        <div className="mt-12">
+        <FadeIn delay={0.1} className="mt-12">
           <SearchBar
             suburb={suburb}
             roomType={type}
@@ -62,7 +63,7 @@ export default async function RoomsPage({ searchParams }) {
             maxPrice={max}
             sort={sort}
           />
-        </div>
+        </FadeIn>
       </div>
 
       <div className="mx-auto max-w-6xl px-4 pt-12 pb-12 sm:px-6 lg:px-8 2xl:max-w-page-inset min-[1720px]:!max-w-[106rem]">

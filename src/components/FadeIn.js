@@ -72,7 +72,7 @@ export function FadeInOnView({
   );
 }
 
-export function Stagger({ children, className, delay = 0.08 }) {
+export function Stagger({ children, className, delay = 0.08, ...props }) {
   const entered = useEnter();
 
   return (
@@ -86,6 +86,7 @@ export function Stagger({ children, className, delay = 0.08 }) {
           transition: { staggerChildren: 0.1, delayChildren: delay },
         },
       }}
+      {...props}
     >
       {children}
     </motion.div>

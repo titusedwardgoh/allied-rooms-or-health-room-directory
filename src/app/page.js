@@ -23,32 +23,13 @@ async function HomeFeatured() {
   if (!featured.length) return null;
 
   return (
-    <section className="mx-auto max-w-6xl px-6 py-6 sm:px-8 sm:py-12 2xl:max-w-page-inset min-[1720px]:!max-w-[106rem]">
-      <FadeInOnView className="mb-6 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
-            Highlights
-          </span>
-          <h2 className="font-display text-2xl font-bold text-stone-900">
-            Recently Listed Rooms
-          </h2>
-        </div>
-        <Link
-          href="/rooms"
-          className="text-sm font-bold text-teal-950 hover:underline"
-        >
-          View all →
-        </Link>
-      </FadeInOnView>
-
-      <Stagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 min-[1720px]:!grid-cols-4">
-        {featured.map((room) => (
-          <StaggerItem key={room.id} className="h-full">
-            <RoomCard room={room} />
-          </StaggerItem>
-        ))}
-      </Stagger>
-    </section>
+    <Stagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 min-[1720px]:!grid-cols-4">
+      {featured.map((room) => (
+        <StaggerItem key={room.id} className="h-full">
+          <RoomCard room={room} />
+        </StaggerItem>
+      ))}
+    </Stagger>
   );
 }
 
@@ -100,9 +81,27 @@ export default function Home() {
         </Suspense>
       </FadeInOnView>
 
-      <Suspense fallback={null}>
-        <HomeFeatured />
-      </Suspense>
+      <section className="mx-auto max-w-6xl px-6 py-6 sm:px-8 sm:py-12 2xl:max-w-page-inset min-[1720px]:!max-w-[106rem]">
+        <FadeInOnView className="mb-6 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
+              Highlights
+            </span>
+            <h2 className="font-display text-2xl font-bold text-stone-900">
+              Recently Listed Rooms
+            </h2>
+          </div>
+          <Link
+            href="/rooms"
+            className="text-sm font-bold text-teal-950 hover:underline"
+          >
+            View all →
+          </Link>
+        </FadeInOnView>
+        <Suspense fallback={<div className="min-h-[16rem] sm:min-h-[20rem]" />}>
+          <HomeFeatured />
+        </Suspense>
+      </section>
     </main>
   );
 }

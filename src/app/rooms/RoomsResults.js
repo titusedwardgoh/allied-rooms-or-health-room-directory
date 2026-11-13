@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import PulseDots from "@/components/PulseDots";
 import RoomCard from "@/components/RoomCard";
 import RoomSortSelect from "@/components/RoomSortSelect";
+import { Stagger, StaggerItem } from "@/components/FadeIn";
 import { getPublishedRooms } from "@/lib/db/rooms";
 import { sortPublishedRooms } from "@/lib/roomsSort";
 
@@ -84,17 +85,13 @@ export default async function RoomsResults({
           ) : null}
         </div>
       ) : (
-        <div className={GRID_CLASS}>
-          {rooms.map((room, index) => (
-            <div
-              key={room.id}
-              className="rooms-in h-full"
-              style={{ animationDelay: `${Math.min(index, 11) * 70}ms` }}
-            >
+        <Stagger className={GRID_CLASS}>
+          {rooms.map((room) => (
+            <StaggerItem key={room.id} className="h-full">
               <RoomCard room={room} />
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       )}
     </>
   );

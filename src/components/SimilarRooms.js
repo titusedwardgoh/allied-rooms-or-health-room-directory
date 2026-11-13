@@ -1,6 +1,5 @@
 import Link from "next/link";
 import RoomCard from "@/components/RoomCard";
-import { FadeInOnView, Stagger, StaggerItem } from "@/components/FadeIn";
 
 export default function SimilarRooms({ room, rooms }) {
   if (!rooms?.length) return null;
@@ -18,7 +17,7 @@ export default function SimilarRooms({ room, rooms }) {
     : "/rooms";
 
   return (
-    <FadeInOnView className="mt-16 border-t border-stone-200 pt-10">
+    <div className="rooms-in mt-16 border-t border-stone-200 pt-10">
       <div className="mb-6 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
@@ -38,13 +37,17 @@ export default function SimilarRooms({ room, rooms }) {
         </Link>
       </div>
 
-      <Stagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {rooms.map((item) => (
-          <StaggerItem key={item.id || item.slug} className="h-full">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {rooms.map((item, i) => (
+          <div
+            key={item.id || item.slug}
+            className="rooms-in h-full"
+            style={{ animationDelay: `${i * 80}ms` }}
+          >
             <RoomCard room={item} />
-          </StaggerItem>
+          </div>
         ))}
-      </Stagger>
-    </FadeInOnView>
+      </div>
+    </div>
   );
 }

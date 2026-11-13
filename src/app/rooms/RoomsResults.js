@@ -3,7 +3,6 @@ import { connection } from "next/server";
 import PulseDots from "@/components/PulseDots";
 import RoomCard from "@/components/RoomCard";
 import RoomSortSelect from "@/components/RoomSortSelect";
-import { Stagger, StaggerItem } from "@/components/FadeIn";
 import { getPublishedRooms } from "@/lib/db/rooms";
 import { sortPublishedRooms } from "@/lib/roomsSort";
 
@@ -63,17 +62,19 @@ export default async function RoomsResults({
 
   return (
     <>
-      <ResultsToolbar
-        countLabel={`${rooms.length} ${rooms.length === 1 ? "room" : "rooms"}${
-          suburb ? ` in ${suburb}` : " across Melbourne"
-        }`}
-        hasFilters={hasFilters}
-        clearHref={clearHref}
-        showSort={rooms.length > 0}
-      />
+      <div className="rooms-in">
+        <ResultsToolbar
+          countLabel={`${rooms.length} ${rooms.length === 1 ? "room" : "rooms"}${
+            suburb ? ` in ${suburb}` : " across Melbourne"
+          }`}
+          hasFilters={hasFilters}
+          clearHref={clearHref}
+          showSort={rooms.length > 0}
+        />
+      </div>
 
       {rooms.length === 0 ? (
-        <div className="rounded-2xl border border-stone-200 bg-white p-10 text-center">
+        <div className="rooms-in rounded-2xl border border-stone-200 bg-white p-10 text-center">
           <p className="text-stone-700">No rooms match these filters.</p>
           {hasFilters ? (
             <Link
@@ -85,13 +86,17 @@ export default async function RoomsResults({
           ) : null}
         </div>
       ) : (
-        <Stagger className={GRID_CLASS}>
-          {rooms.map((room) => (
-            <StaggerItem key={room.id} className="h-full">
+        <div className={GRID_CLASS}>
+          {rooms.map((room, i) => (
+            <div
+              key={room.id}
+              className="rooms-in h-full"
+              style={{ animationDelay: `${Math.min(i, 12) * 70}ms` }}
+            >
               <RoomCard room={room} />
-            </StaggerItem>
+            </div>
           ))}
-        </Stagger>
+        </div>
       )}
     </>
   );

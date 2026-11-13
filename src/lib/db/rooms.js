@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { listingTitle, matchesRoomTypeFilter, slugify } from "@/lib/format";
 import { suburbStatsFromRooms } from "@/lib/hubs";
 import { mockRooms } from "@/lib/mockData";
@@ -109,7 +110,7 @@ export async function getPublishedRooms(filters = {}) {
   return fetchPublishedRooms(filters);
 }
 
-export async function getRoomBySlug(slug) {
+export const getRoomBySlug = cache(async function getRoomBySlug(slug) {
   if (!slug) return null;
 
   if (!supabaseReaders().length) {
@@ -135,7 +136,7 @@ export async function getRoomBySlug(slug) {
     return null;
   }
   return normalizeRoom(data);
-}
+});
 
 export async function getFeaturedRooms(limit = 6) {
   const rooms = await fetchPublishedRooms();

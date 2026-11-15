@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { listingTitle, matchesRoomTypeFilter, slugify } from "@/lib/format";
 import { suburbStatsFromRooms } from "@/lib/hubs";
 import { mockRooms } from "@/lib/mockData";
@@ -25,12 +26,14 @@ async function queryRooms(run) {
   return { data: null, error: lastError };
 }
 
+export const ROOMS_CACHE_TAG = "rooms";
+
 function normalizeDays(days) {
   if (!days) return [];
   return Array.isArray(days) ? days.filter(Boolean) : [days];
 }
 
-function filterMock(rooms, filters = {}) {
+function filterPublishedRooms(rooms, filters = {}) {
   const { suburb = "", type = "", days = [], max = "" } = filters;
   const cleanSuburb = suburb.trim().toLowerCase();
   const maxCents = max ? parseInt(max, 10) * 100 : null;
@@ -38,13 +41,16 @@ function filterMock(rooms, filters = {}) {
 
   return rooms.filter((room) => {
     if (!room.is_published) return false;
-    if (cleanSuburb && !room.suburb.toLowerCase().includes(cleanSuburb)) {
+    if (
+      cleanSuburb &&
+      !String(room.suburb || "").toLowerCase().includes(cleanSuburb)
+    ) {
       return false;
     }
     if (!matchesRoomTypeFilter(room.room_type, type)) return false;
     if (
       selectedDays.length > 0 &&
-      !selectedDays.some((d) => room.available_days.includes(d))
+      !selectedDays.some((d) => (room.available_days || []).includes(d))
     ) {
       return false;
     }
@@ -86,7 +92,7 @@ function applyRoomFilters(query, filters = {}) {
 
 async function fetchPublishedRooms(filters = {}) {
   if (!supabaseReaders().length) {
-    return filterMock(mockRooms, filters).map(normalizeRoom);
+    return filterPublishedRooms(mockRooms, filters).map(normalizeRoom);
   }
 
   let { data, error } = await queryRooms((supabase) =>
@@ -110,9 +116,32 @@ export async function getPublishedRooms(filters = {}) {
   return fetchPublishedRooms(filters);
 }
 
-export const getRoomBySlug = cache(async function getRoomBySlug(slug) {
-  if (!slug) return null;
+const getCachedPublishedRooms = unstable_cache(
+  async () => fetchPublishedRooms(),
+  ["published-rooms"],
+  { tags: [ROOMS_CACHE_TAG] },
+);
 
+export async function getDirectoryRooms(filters = {}) {
+  const rooms = await getCachedPublishedRooms();
+  return filterPublishedRooms(rooms, filters);
+}
+
+export function roomCacheTag(slug) {
+  return `room-${String(slug || "").trim()}`;
+}
+
+export function revalidateRoomsCache() {
+  revalidateTag(ROOMS_CACHE_TAG);
+}
+
+export function revalidateRoomCache(slug) {
+  const value = String(slug || "").trim();
+  if (!value) return;
+  revalidateTag(roomCacheTag(value));
+}
+
+async function fetchRoomBySlug(slug) {
   if (!supabaseReaders().length) {
     return normalizeRoom(mockRooms.find((room) => room.slug === slug) || null);
   }
@@ -136,10 +165,21 @@ export const getRoomBySlug = cache(async function getRoomBySlug(slug) {
     return null;
   }
   return normalizeRoom(data);
+}
+
+export const getRoomBySlug = cache(async function getRoomBySlug(slug) {
+  const value = String(slug || "").trim();
+  if (!value) return null;
+
+  return unstable_cache(
+    async () => fetchRoomBySlug(value),
+    ["room-by-slug", value],
+    { tags: [ROOMS_CACHE_TAG, roomCacheTag(value)] },
+  )();
 });
 
 export async function getFeaturedRooms(limit = 6) {
-  const rooms = await fetchPublishedRooms();
+  const rooms = await getDirectoryRooms();
   return rooms.slice(0, limit);
 }
 
@@ -158,7 +198,7 @@ function similarScore(candidate, room) {
 export async function getSimilarRooms(room, limit = 3) {
   if (!room || limit < 1) return [];
 
-  const rooms = await fetchPublishedRooms();
+  const rooms = await getDirectoryRooms();
   const currentId = room.id;
   const currentSlug = room.slug;
 
@@ -181,19 +221,7 @@ export async function getSimilarRooms(room, limit = 3) {
 }
 
 export async function getSuburbStats() {
-  if (!isSupabaseConfigured()) {
-    return statsFromRooms(mockRooms);
-  }
-
-  const { data, error } = await queryRooms((supabase) =>
-    supabase.from("rooms").select("suburb, is_published").eq("is_published", true),
-  );
-
-  if (error) {
-    console.error("Supabase getSuburbStats:", error.message);
-    return statsFromRooms([]);
-  }
-  return statsFromRooms(data ?? []);
+  return statsFromRooms(await getDirectoryRooms());
 }
 
 export function usingSupabase() {

@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { notifyAdmin } from "@/lib/adminNotify";
-import { getRoomBySlug, publishRoomBySlug } from "@/lib/db/rooms";
+import {
+  getRoomBySlug,
+  publishRoomBySlug,
+  revalidateRoomCache,
+  revalidateRoomsCache,
+} from "@/lib/db/rooms";
 import { deleteMatchingListingLeads } from "@/lib/db/leads";
 import { pricePerDayLabel } from "@/lib/format";
 import { SITE_URL } from "@/lib/site";
@@ -65,7 +70,10 @@ export async function POST(request) {
     });
   }
 
+  revalidateRoomsCache();
+  revalidateRoomCache(slug);
   revalidatePath("/");
   revalidatePath("/rooms");
+  revalidatePath(`/rooms/${slug}`);
   return NextResponse.json({ ok: true });
 }

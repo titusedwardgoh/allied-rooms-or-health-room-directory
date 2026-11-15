@@ -5,8 +5,6 @@ import BackButton from "@/components/BackButton";
 import ScrollToTop from "@/components/ScrollToTop";
 import RoomListing, { RoomListingFallback } from "./RoomListing";
 
-export const dynamic = "force-dynamic";
-
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const room = await getRoomBySlug(slug);

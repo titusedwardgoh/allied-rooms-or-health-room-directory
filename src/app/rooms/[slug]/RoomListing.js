@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { roomLocationLabel } from "@/lib/auAddress";
 import { getRoomBySlug, getSimilarRooms } from "@/lib/db/rooms";
@@ -35,13 +34,11 @@ export function RoomListingFallback() {
 }
 
 async function SimilarRoomsSection({ room }) {
-  await connection();
   const rooms = await getSimilarRooms(room, 3);
   return <SimilarRooms room={room} rooms={rooms} />;
 }
 
 export default async function RoomListing({ slug }) {
-  await connection();
   const room = await getRoomBySlug(slug);
 
   if (!room) notFound();

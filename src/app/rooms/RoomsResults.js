@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { connection } from "next/server";
 import PulseDots from "@/components/PulseDots";
 import RoomCard from "@/components/RoomCard";
 import RoomSortSelect from "@/components/RoomSortSelect";
-import { getPublishedRooms } from "@/lib/db/rooms";
+import { getDirectoryRooms } from "@/lib/db/rooms";
 import { sortPublishedRooms } from "@/lib/roomsSort";
 
 const GRID_CLASS =
@@ -54,9 +53,8 @@ export default async function RoomsResults({
   hasFilters,
   clearHref,
 }) {
-  await connection();
   const rooms = sortPublishedRooms(
-    await getPublishedRooms({ suburb, type, days, max }),
+    await getDirectoryRooms({ suburb, type, days, max }),
     sort,
   );
 

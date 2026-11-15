@@ -5,8 +5,6 @@ import { FadeIn } from "@/components/FadeIn";
 import { parseRoomSort } from "@/lib/roomsSort";
 import RoomsResults, { RoomsResultsFallback } from "./RoomsResults";
 
-export const dynamic = "force-dynamic";
-
 export const metadata = {
   title: "Find a Room",
   description:

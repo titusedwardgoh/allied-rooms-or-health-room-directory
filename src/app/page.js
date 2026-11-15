@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { connection } from "next/server";
 import SearchBar from "@/components/SearchBar";
 import RoomCard from "@/components/RoomCard";
 import MarkListingOrigin from "@/components/MarkListingOrigin";
@@ -8,16 +7,12 @@ import SuburbBento from "@/components/SuburbBento";
 import { FadeIn, FadeInOnView, Stagger, StaggerItem } from "@/components/FadeIn";
 import { getFeaturedRooms, getSuburbStats } from "@/lib/db/rooms";
 
-export const dynamic = "force-dynamic";
-
 async function HomeHubs() {
-  await connection();
   const stats = await getSuburbStats();
   return <SuburbBento stats={stats} />;
 }
 
 async function HomeFeatured() {
-  await connection();
   const featured = await getFeaturedRooms(8);
 
   if (!featured.length) return null;

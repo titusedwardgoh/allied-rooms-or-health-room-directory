@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { notifyAdmin } from "@/lib/adminNotify";
-import { getRoomBySlug, publishRoomBySlug } from "@/lib/db/rooms";
+import {
+  getRoomBySlug,
+  publishRoomBySlug,
+  revalidateRoomCache,
+  revalidateRoomsCache,
+} from "@/lib/db/rooms";
 import { pricePerDayLabel } from "@/lib/format";
 import { SITE_URL } from "@/lib/site";
 import { createSupabaseAdminClient } from "@/lib/supabase";
@@ -43,7 +48,10 @@ export async function publishListing(slug) {
     });
   }
 
+  revalidateRoomsCache();
+  revalidateRoomCache(value);
   revalidatePath("/");
   revalidatePath("/rooms");
+  revalidatePath(`/rooms/${value}`);
   return { ok: true };
 }

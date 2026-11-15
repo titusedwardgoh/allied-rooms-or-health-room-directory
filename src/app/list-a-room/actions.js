@@ -17,6 +17,7 @@ import {
   updateRoomById,
   updateRoomImageUrls,
   getRoomBySlug,
+  revalidateRoomCache,
 } from "@/lib/db/rooms";
 import {
   deleteHostProfile,
@@ -546,6 +547,7 @@ export async function createRoomListing(prevState, formData) {
     return { error: "Something went wrong while saving the listing. Please try again." };
   }
 
+  revalidateRoomCache(savedSlug);
   revalidatePath("/");
   revalidatePath("/rooms");
   revalidatePath(`/rooms/${savedSlug}`);

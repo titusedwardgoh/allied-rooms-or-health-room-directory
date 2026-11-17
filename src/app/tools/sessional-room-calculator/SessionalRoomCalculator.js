@@ -10,17 +10,17 @@ const MBS_PRESETS = [
 ];
 
 const RANGE = {
-  dailyRoomRate: { min: 50, max: 350, step: 5 },
-  sessionFee: { min: 50, max: 500, step: 5 },
-  variableCost: { min: 0, max: 80, step: 1 },
-  daysPerWeek: { min: 1, max: 5, step: 1 },
-  clientsPerDay: { min: 1, max: 10, step: 1 },
+  dailyRoomRate: { min: 50, max: 1000, step: 10 },
+  sessionFee: { min: 50, max: 1000, step: 10 },
+  variableCost: { min: 0, max: 1000, step: 5 },
+  daysPerWeek: { min: 1, max: 7, step: 1 },
+  clientsPerDay: { min: 1, max: 30, step: 1 },
 };
 
 const SLIDER_CLASS =
   "w-full cursor-pointer accent-teal-900";
 const NUMBER_CLASS =
-  "w-24 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-right text-sm font-semibold text-stone-900 outline-none focus:border-teal-900 focus:ring-2 focus:ring-teal-900/10";
+  "w-28 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-right text-sm font-semibold text-stone-900 outline-none focus:border-teal-900 focus:ring-2 focus:ring-teal-900/10";
 
 function formatAUD(value, digits = 0) {
   return new Intl.NumberFormat("en-AU", {
@@ -37,11 +37,13 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, n));
 }
 
-function Field({ label, hint, children }) {
+function Field({ label, hint, htmlFor, children }) {
   return (
     <div>
       <div className="mb-2 flex items-end justify-between gap-3">
-        <label className="text-sm font-semibold text-stone-900">{label}</label>
+        <label htmlFor={htmlFor} className="text-sm font-semibold text-stone-900">
+          {label}
+        </label>
         {hint}
       </div>
       {children}
@@ -49,7 +51,8 @@ function Field({ label, hint, children }) {
   );
 }
 
-function SliderRow({ id, value, min, max, step, prefix, onChange }) {
+function SliderRow({ id, label, value, min, max, step, prefix, onChange }) {
+  const name = label || id;
   return (
     <div className="flex items-center gap-3">
       <input
@@ -61,6 +64,7 @@ function SliderRow({ id, value, min, max, step, prefix, onChange }) {
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
         className={SLIDER_CLASS}
+        aria-label={name}
       />
       <div className="relative">
         {prefix ? (
@@ -69,6 +73,7 @@ function SliderRow({ id, value, min, max, step, prefix, onChange }) {
           </span>
         ) : null}
         <input
+          id={`${id}-number`}
           type="number"
           min={min}
           max={max}
@@ -80,7 +85,7 @@ function SliderRow({ id, value, min, max, step, prefix, onChange }) {
           }}
           onBlur={(event) => onChange(clamp(event.target.value, min, max))}
           className={`${NUMBER_CLASS} ${prefix ? "pl-6" : ""}`}
-          aria-label={id}
+          aria-label={`${name} amount`}
         />
       </div>
     </div>
@@ -99,7 +104,7 @@ export default function SessionalRoomCalculator() {
   const results = useMemo(() => {
     const rate = clamp(dailyRoomRate, RANGE.dailyRoomRate.min, RANGE.dailyRoomRate.max);
     const fee = clamp(sessionFee, RANGE.sessionFee.min, RANGE.sessionFee.max);
-    const rebate = Math.max(0, Number(mbsRebate) || 0);
+    const rebate = clamp(mbsRebate, 0, 1000);
     const variable = clamp(variableCost, RANGE.variableCost.min, RANGE.variableCost.max);
     const days = clamp(daysPerWeek, RANGE.daysPerWeek.min, RANGE.daysPerWeek.max);
     const clients = clamp(clientsPerDay, RANGE.clientsPerDay.min, RANGE.clientsPerDay.max);
@@ -111,9 +116,12 @@ export default function SessionalRoomCalculator() {
     const dailyNetProfit = clients * netMarginPerSession - rate;
     const weeklyNetProfit = dailyNetProfit * days;
     const annualNetProfit = weeklyNetProfit * 48;
-    const equivalentSplitCost = clients * fee * 0.3;
-    const dailySavingsVsSplit = equivalentSplitCost - rate;
-    const annualSavingsVsSplit = dailySavingsVsSplit * days * 48;
+    const equivalentSplitCost =
+      netMarginPerSession > 0 ? clients * fee * 0.3 : null;
+    const dailySavingsVsSplit =
+      equivalentSplitCost == null ? null : equivalentSplitCost - rate;
+    const annualSavingsVsSplit =
+      dailySavingsVsSplit == null ? null : dailySavingsVsSplit * days * 48;
 
     return {
       rate,
@@ -142,8 +150,9 @@ export default function SessionalRoomCalculator() {
   }
 
   return (
-    <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-      <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
+    <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
+      <section className="flex h-full flex-col justify-between rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
+        <div>
         <h2 className="font-sans text-xl font-black text-stone-900">
           Your numbers
         </h2>
@@ -152,9 +161,10 @@ export default function SessionalRoomCalculator() {
         </p>
 
         <div className="mt-6 space-y-6">
-          <Field label="Daily room rate">
+          <Field label="Daily room rate" htmlFor="dailyRoomRate">
             <SliderRow
               id="dailyRoomRate"
+              label="Daily room rate"
               value={dailyRoomRate}
               {...RANGE.dailyRoomRate}
               prefix="$"
@@ -162,9 +172,10 @@ export default function SessionalRoomCalculator() {
             />
           </Field>
 
-          <Field label="Session fee">
+          <Field label="Session fee" htmlFor="sessionFee">
             <SliderRow
               id="sessionFee"
+              label="Session fee"
               value={sessionFee}
               {...RANGE.sessionFee}
               prefix="$"
@@ -185,7 +196,7 @@ export default function SessionalRoomCalculator() {
                     type="button"
                     onClick={() => selectPreset(preset)}
                     aria-pressed={active}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                    className={`rounded-full cursor-pointer border px-3 py-1.5 text-xs font-semibold transition ${
                       active
                         ? "border-teal-900 bg-teal-900 text-white"
                         : "border-stone-200 bg-stone-50 text-stone-600 hover:border-stone-300 hover:bg-white"
@@ -208,12 +219,15 @@ export default function SessionalRoomCalculator() {
                   id="custom-rebate"
                   type="number"
                   min={0}
-                  max={500}
+                  max={1000}
                   step={0.05}
                   value={mbsRebate}
-                  onChange={(event) => setMbsRebate(event.target.value)}
+                  onChange={(event) => {
+                    setMbsPreset("custom");
+                    setMbsRebate(event.target.value);
+                  }}
                   onBlur={(event) =>
-                    setMbsRebate(clamp(event.target.value, 0, 500))
+                    setMbsRebate(clamp(event.target.value, 0, 1000))
                   }
                   className="w-full rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-900 outline-none focus:border-teal-900 focus:ring-2 focus:ring-teal-900/10"
                 />
@@ -221,9 +235,10 @@ export default function SessionalRoomCalculator() {
             ) : null}
           </div>
 
-          <Field label="Variable cost per session">
+          <Field label="Variable cost per session" htmlFor="variableCost">
             <SliderRow
               id="variableCost"
+              label="Variable cost per session"
               value={variableCost}
               {...RANGE.variableCost}
               prefix="$"
@@ -234,33 +249,51 @@ export default function SessionalRoomCalculator() {
             </p>
           </Field>
 
-          <Field label="Days per week">
+          <Field label="Days per week" htmlFor="daysPerWeek">
             <SliderRow
               id="daysPerWeek"
+              label="Days per week"
               value={daysPerWeek}
               {...RANGE.daysPerWeek}
               onChange={(value) =>
                 setDaysPerWeek(
-                  Math.round(clamp(value, 1, 5)),
+                  Math.round(
+                    clamp(
+                      value,
+                      RANGE.daysPerWeek.min,
+                      RANGE.daysPerWeek.max,
+                    ),
+                  ),
                 )
               }
             />
           </Field>
 
-          <Field label="Clients per day">
+          <Field label="Clients per day" htmlFor="clientsPerDay">
             <SliderRow
               id="clientsPerDay"
+              label="Clients per day"
               value={clientsPerDay}
               {...RANGE.clientsPerDay}
               onChange={(value) =>
-                setClientsPerDay(Math.round(clamp(value, 1, 10)))
+                setClientsPerDay(
+                  Math.round(
+                    clamp(
+                      value,
+                      RANGE.clientsPerDay.min,
+                      RANGE.clientsPerDay.max,
+                    ),
+                  ),
+                )
               }
             />
           </Field>
         </div>
+        </div>
       </section>
 
-      <section className="rounded-2xl bg-[#0f4c45] p-6 text-white shadow-sm sm:p-8">
+      <section className="flex h-full flex-col justify-between rounded-2xl bg-[#0f4c45] p-6 text-white shadow-sm sm:p-8">
+        <div>
         <span className="text-xs font-bold uppercase tracking-wider text-white/50">
           Results
         </span>
@@ -269,31 +302,42 @@ export default function SessionalRoomCalculator() {
         </h2>
 
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl bg-white/10 p-4">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-white/60">
+          <div className="rounded-2xl bg-white p-4 text-stone-900 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
               Break-even sessions / day
             </p>
-            <p className="mt-1 font-sans text-3xl font-black">
+            <p className="mt-1 font-sans text-3xl font-black text-teal-950">
               {results.breakEvenSessions == null
                 ? "—"
                 : results.breakEvenSessions.toFixed(2)}
             </p>
-            <p className="mt-1 text-xs text-white/70">
+            <p className="mt-1 text-xs text-stone-600">
               Clients needed to cover {formatAUD(results.rate)} room hire
             </p>
           </div>
-          <div className="rounded-2xl bg-white/10 p-4">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-white/60">
+          <div className="rounded-2xl bg-white p-4 text-stone-900 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
               Daily net profit
             </p>
-            <p className="mt-1 font-sans text-3xl font-black">
+            <p className="mt-1 font-sans text-3xl font-black text-teal-950">
               {formatAUD(results.dailyNetProfit)}
             </p>
-            <p className="mt-1 text-xs text-white/70">
+            <p className="mt-1 text-xs text-stone-600">
               After the day rate, at {clientsPerDay} clients
             </p>
           </div>
         </div>
+
+        {results.netMarginPerSession <= 0 ? (
+          <div
+            className="mt-4 rounded-xl border border-amber-400/30 bg-amber-500/20 p-3 text-xs text-amber-200"
+            role="status"
+          >
+            <strong>Notice:</strong> Your variable costs per session meet or
+            exceed your session fee. Increase your fee to calculate break-even
+            sessions and net profit.
+          </div>
+        ) : null}
 
         <dl className="mt-6 space-y-3 text-sm">
           <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-3">
@@ -315,13 +359,20 @@ export default function SessionalRoomCalculator() {
             <dd className="font-semibold">{formatAUD(results.annualNetProfit)}</dd>
           </div>
         </dl>
+        </div>
 
-        <div className="mt-6 rounded-2xl bg-white px-4 py-4 text-sm leading-relaxed text-stone-700">
-          {results.dailySavingsVsSplit >= 0 ? (
+        <div>
+        <div className="mt-6 rounded-2xl bg-white/95 px-4 py-4 text-sm leading-relaxed text-stone-800 shadow-sm">
+          {results.netMarginPerSession <= 0 ? (
+            <p className="text-stone-600">
+              Increase your session fee above variable costs to evaluate savings
+              against a 30% clinic split.
+            </p>
+          ) : results.dailySavingsVsSplit >= 0 ? (
             <p>
               By paying flat room hire ({formatAUD(results.rate)}/day) instead of
               a 30% clinic split, you save{" "}
-              <strong className="font-semibold text-teal-950">
+              <strong className="font-bold text-teal-950">
                 {formatAUD(results.dailySavingsVsSplit)}/day
               </strong>{" "}
               ({formatAUD(results.annualSavingsVsSplit)}/year at {daysPerWeek}{" "}
@@ -330,7 +381,7 @@ export default function SessionalRoomCalculator() {
           ) : (
             <p>
               At this volume, a 30% clinic split would be{" "}
-              <strong className="font-semibold text-teal-950">
+              <strong className="font-bold text-teal-950">
                 {formatAUD(Math.abs(results.dailySavingsVsSplit))}/day
               </strong>{" "}
               cheaper than {formatAUD(results.rate)} flat hire.
@@ -343,6 +394,7 @@ export default function SessionalRoomCalculator() {
           they are not financial advice. Confirm current MBS items with
           Services Australia.
         </p>
+        </div>
       </section>
     </div>
   );

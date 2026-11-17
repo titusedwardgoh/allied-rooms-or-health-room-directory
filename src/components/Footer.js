@@ -10,7 +10,10 @@ const LINK_CLASS =
 const MARKETPLACE = [
   { href: "/rooms", label: "Find a Room" },
   { href: "/list-a-room", label: "List a Room" },
-  { href: "/tools/sessional-room-calculator", label: "Room calculator" },
+];
+
+const RESOURCES = [
+  { href: "/tools/sessional-room-calculator", label: "Room Budget Calculator" },
 ];
 
 const TOP_LOCATIONS = [
@@ -65,10 +68,20 @@ export default function Footer() {
 
           <nav
             aria-label="Footer"
-            className="grid grid-cols-2 gap-x-10 gap-y-8 sm:flex sm:gap-12"
+            className="grid grid-cols-2 gap-x-10 gap-y-8 md:grid-cols-3 lg:flex lg:gap-10 xl:gap-12"
           >
             <FooterColumn title="Marketplace">
               {MARKETPLACE.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className={LINK_CLASS}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </FooterColumn>
+
+            <FooterColumn title="Resources">
+              {RESOURCES.map((link) => (
                 <li key={link.href}>
                   <Link href={link.href} className={LINK_CLASS}>
                     {link.label}

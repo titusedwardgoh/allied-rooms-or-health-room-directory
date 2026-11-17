@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "Sessional Room Hire & Break-Even Calculator",
+  title: "Clinician Room Budget Calculator",
   description:
-    "Calculate break-even patient sessions, daily profit, and compare a flat day rate against a 30% practice split for private practice in Melbourne.",
+    "Calculate break-even client sessions, net profit margins, and flat room hire savings vs 30% practice splits for Melbourne medical and allied health practitioners.",
 };
 
 export default function SessionalRoomCalculatorLayout({ children }) {

@@ -40,18 +40,24 @@ export default async function RoomsPage({ searchParams }) {
         <MarkListingOrigin from="search" />
       </Suspense>
       <div className="mx-auto max-w-6xl px-4 pt-12 sm:px-6 lg:px-8 2xl:max-w-page-inset">
-        <FadeIn className="mx-auto max-w-2xl text-center">
-          <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
-            Directory
-          </span>
-          <h1 className="mt-2 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl">
-            Find a Room
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-stone-600">
-            Browse sessional allied health rooms across Melbourne by suburb,
-            day, and daily rate.
-          </p>
-        </FadeIn>
+        <div className="mx-auto max-w-4xl text-center">
+          <FadeIn>
+            <span className="inline-block rounded-full bg-stone-200/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-stone-700">
+              Directory
+            </span>
+          </FadeIn>
+          <FadeIn delay={0.08}>
+            <h1 className="mt-6 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl sm:leading-[1.1]">
+              Find a <span className="text-teal-900">Room</span>
+            </h1>
+          </FadeIn>
+          <FadeIn delay={0.16}>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-stone-600 sm:text-lg">
+              Browse sessional allied health rooms across Melbourne by suburb,
+              day, and daily rate.
+            </p>
+          </FadeIn>
+        </div>
 
         <FadeIn delay={0.1} className="mt-12">
           <SearchBar

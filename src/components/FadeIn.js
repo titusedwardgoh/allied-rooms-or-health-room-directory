@@ -73,15 +73,17 @@ export function FadeInOnView({
 }
 
 export function Stagger({ children, className, delay = 0.08, ...props }) {
+  const entered = useEnter();
+
   return (
     <motion.div
       className={className}
       initial="hidden"
-      animate="show"
+      animate={entered ? "show" : "hidden"}
       variants={{
         hidden: {},
         show: {
-          transition: { staggerChildren: 0.1, delayChildren: delay },
+          transition: { staggerChildren: 0.12, delayChildren: delay },
         },
       }}
       {...props}

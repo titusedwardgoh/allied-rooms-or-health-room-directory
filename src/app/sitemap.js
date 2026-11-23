@@ -14,6 +14,10 @@ const STATIC_ROUTES = [
   { path: "/locations", priority: 0.8 },
   { path: "/tools/sessional-room-calculator", priority: 0.7 },
   { path: "/tools/sublease-revenue-calculator", priority: 0.7 },
+  {
+    path: "/resources/private-practice-launch-checklist-vic",
+    priority: 0.7,
+  },
   { path: "/privacy", priority: 0.3 },
   { path: "/terms", priority: 0.3 },
 ];

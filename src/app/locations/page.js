@@ -16,18 +16,24 @@ export default function LocationsPage() {
   return (
     <main className="min-h-screen bg-stone-50/60">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <FadeIn className="mx-auto max-w-2xl text-center">
-          <span className="inline-block rounded-full bg-stone-200/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-stone-700">
-            Locations
-          </span>
-          <h1 className="mt-6 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl">
-            Melbourne location hubs
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-stone-600">
-            Sessional consulting rooms across Melbourne, grouped by suburb so
-            you can compare day rates and reach hosts directly.
-          </p>
-        </FadeIn>
+        <div className="mx-auto max-w-4xl text-center">
+          <FadeIn>
+            <span className="inline-block rounded-full bg-stone-200/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-stone-700">
+              Locations
+            </span>
+          </FadeIn>
+          <FadeIn delay={0.08}>
+            <h1 className="mt-6 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl sm:leading-[1.1]">
+              Melbourne location <span className="text-teal-900">hubs</span>
+            </h1>
+          </FadeIn>
+          <FadeIn delay={0.16}>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-stone-600 sm:text-lg">
+              Sessional consulting rooms across Melbourne, grouped by suburb so
+              you can compare day rates and reach hosts directly.
+            </p>
+          </FadeIn>
+        </div>
 
         <Stagger className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {SUBURBS.map((suburb) => {

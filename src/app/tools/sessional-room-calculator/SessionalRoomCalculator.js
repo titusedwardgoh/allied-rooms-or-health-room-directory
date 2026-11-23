@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Stagger, StaggerItem } from "@/components/FadeIn";
 
 const MBS_PRESETS = [
   { id: "registered", label: "Registered Psych", amount: 101.55 },
@@ -150,7 +151,11 @@ export default function SessionalRoomCalculator() {
   }
 
   return (
-    <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
+    <Stagger
+      delay={0.24}
+      className="mt-10 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2"
+    >
+      <StaggerItem className="h-full">
       <section className="flex h-full flex-col justify-between rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
         <div>
         <h2 className="font-sans text-xl font-black text-stone-900">
@@ -291,7 +296,9 @@ export default function SessionalRoomCalculator() {
         </div>
         </div>
       </section>
+      </StaggerItem>
 
+      <StaggerItem className="h-full">
       <section className="flex h-full flex-col justify-between rounded-2xl bg-[#0f4c45] p-6 text-white shadow-sm sm:p-8">
         <div>
         <span className="text-xs font-bold uppercase tracking-wider text-white/50">
@@ -396,6 +403,7 @@ export default function SessionalRoomCalculator() {
         </p>
         </div>
       </section>
-    </div>
+      </StaggerItem>
+    </Stagger>
   );
 }

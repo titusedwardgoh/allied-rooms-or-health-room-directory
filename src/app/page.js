@@ -34,7 +34,7 @@ export default function Home() {
       <Suspense fallback={null}>
         <MarkListingOrigin from="home" />
       </Suspense>
-      <section className="relative px-6 pb-6 pt-12 sm:px-8 sm:pb-12 sm:pt-24 2xl:pt-32">
+      <section className="relative px-6 pb-6 pt-12 sm:px-8 sm:pb-8">
         <div className="mx-auto max-w-6xl text-center 2xl:max-w-page">
           <FadeIn>
             <span className="inline-block rounded-full bg-stone-200/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-stone-700">
@@ -56,13 +56,13 @@ export default function Home() {
             </p>
           </FadeIn>
 
-          <FadeIn delay={0.24} className="mt-8 sm:mt-16">
+          <FadeIn delay={0.24} className="mt-8 sm:mt-12">
             <SearchBar />
           </FadeIn>
         </div>
       </section>
 
-      <FadeInOnView className="mx-auto max-w-6xl px-6 py-6 sm:px-8 sm:py-12 2xl:max-w-page">
+      <FadeInOnView className="mx-auto max-w-6xl px-6 py-6 sm:px-8 sm:pt-8 sm:pb-12 2xl:max-w-page">
         <div className="mb-6">
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
             Explore Locations

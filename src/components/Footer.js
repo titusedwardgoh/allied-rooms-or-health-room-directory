@@ -15,6 +15,10 @@ const MARKETPLACE = [
 const RESOURCES = [
   { href: "/tools/sessional-room-calculator", label: "Room Budget Calculator" },
   { href: "/tools/sublease-revenue-calculator", label: "Sublease Calculator" },
+  {
+    href: "/resources/private-practice-launch-checklist-vic",
+    label: "VIC Launch Checklist",
+  },
 ];
 
 const TOP_LOCATIONS = [

@@ -74,21 +74,21 @@ export default function ContactPage() {
   return (
     <main className="min-h-screen bg-stone-50/60">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto max-w-4xl text-center">
           <FadeIn>
-            <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
+            <span className="inline-block rounded-full bg-stone-200/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-stone-700">
               Contact
             </span>
           </FadeIn>
 
           <FadeIn delay={0.08}>
-            <h1 className="mt-2 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl">
-              Get in touch
+            <h1 className="mt-6 font-sans text-4xl font-black tracking-tight text-stone-900 sm:text-5xl sm:leading-[1.1]">
+              Get in <span className="text-teal-900">touch</span>
             </h1>
           </FadeIn>
 
           <FadeIn delay={0.16}>
-            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-stone-600">
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-stone-600 sm:text-lg">
               Questions about listing a room, finding a space, or the directory
               itself? Send a note and we will get back to you.
             </p>
